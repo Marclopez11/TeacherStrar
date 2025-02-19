@@ -16,6 +16,9 @@
 
         <!-- Styles -->
         @stack('styles')
+
+        <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+        <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     </head>
     <body class="font-sans antialiased">
         <x-banner />

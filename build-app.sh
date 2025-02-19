@@ -9,12 +9,6 @@ echo "🚀 Starting build process..."
 echo "📦 Installing PHP dependencies..."
 composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 
-echo "📦 Installing Node.js dependencies..."
-npm ci --no-audit --no-fund
-
-echo "🏗️ Building assets..."
-npm run build
-
 echo "🧹 Clearing Laravel cache..."
 php artisan optimize:clear
 
