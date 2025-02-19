@@ -10,7 +10,8 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     nodejs \
-    npm
+    npm \
+    nginx
 
 # Instalar extensiones de PHP
 RUN docker-php-ext-install pdo_mysql mysqli mbstring exif pcntl bcmath gd
@@ -33,6 +34,9 @@ RUN npm install
 # Copiar el resto de los archivos
 COPY . .
 
+# Configurar nginx
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
 # Dar permisos de ejecución a los scripts
 RUN chmod +x ./build-app.sh ./run-worker.sh ./run-cron.sh
 
@@ -54,8 +58,16 @@ RUN php artisan optimize && \
     php artisan route:cache && \
     php artisan view:cache
 
+# Configurar permisos
+RUN chown -R www-data:www-data /app \
+    && chmod -R 755 /app/storage
+
 # Exponer puerto
-EXPOSE 8000
+EXPOSE 80
+
+# Copiar script de inicio
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
 
 # Comando para iniciar la aplicación
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+CMD ["/start.sh"]
