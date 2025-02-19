@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
     npm
 
 # Instalar extensiones de PHP
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+RUN docker-php-ext-install pdo_mysql mysqli mbstring exif pcntl bcmath gd
 
 # Instalar Redis
 RUN pecl install redis && docker-php-ext-enable redis
@@ -30,18 +30,20 @@ COPY . .
 # Dar permisos de ejecución a los scripts
 RUN chmod +x ./build-app.sh ./run-worker.sh ./run-cron.sh
 
+# Copiar archivo .env
+COPY .env .env
+
 # Instalar dependencias de PHP
 RUN composer install --no-dev --optimize-autoloader
 
 # Instalar dependencias de Node.js
-RUN npm ci && npm run build
+RUN npm install --production && npm run build
 
 # Optimizar Laravel
-RUN php artisan optimize:clear \
-    && php artisan config:cache \
-    && php artisan event:cache \
-    && php artisan route:cache \
-    && php artisan view:cache
+RUN php artisan optimize && \
+    php artisan config:cache && \
+    php artisan route:cache && \
+    php artisan view:cache
 
 # Exponer puerto
 EXPOSE 8000
