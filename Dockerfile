@@ -24,7 +24,13 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Establecer directorio de trabajo
 WORKDIR /app
 
-# Copiar archivos de la aplicación
+# Copiar package.json y package-lock.json primero para aprovechar la caché de Docker
+COPY package*.json ./
+
+# Instalar todas las dependencias incluyendo las de desarrollo
+RUN npm install
+
+# Copiar el resto de los archivos
 COPY . .
 
 # Dar permisos de ejecución a los scripts
@@ -36,8 +42,11 @@ COPY .env .env
 # Instalar dependencias de PHP
 RUN composer install --no-dev --optimize-autoloader
 
-# Instalar dependencias de Node.js
-RUN npm install --production && npm run build
+# Construir assets
+RUN npm run build
+
+# Limpiar caché npm
+RUN npm cache clean --force
 
 # Optimizar Laravel
 RUN php artisan optimize && \
