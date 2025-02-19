@@ -1,14 +1,13 @@
 #!/bin/bash
+# Make sure this file has executable permissions, run `chmod +x build-app.sh`
+
+# Exit the script if any command fails
 set -e
 
-# Instalar extensiones de PHP necesarias si no están instaladas
-if ! php -m | grep -q "redis"; then
-    pecl install redis
-    docker-php-ext-enable redis
-fi
+# Instalar dependencias de PHP
+composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 
-# Instalar dependencias
-composer install --no-dev --optimize-autoloader
+# Instalar dependencias de Node.js
 npm ci
 npm run build
 
