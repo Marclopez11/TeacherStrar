@@ -15,3 +15,5 @@ port = "80"
 
 [services.environment]
 PHP_CLI_SERVER_WORKERS = "4"
+NODE_ENV = "production"
+NPM_CONFIG_PRODUCTION = "false"

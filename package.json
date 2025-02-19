@@ -3,14 +3,14 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "vite build"
+        "build": "vite build",
+        "postinstall": "npm run build"
     },
     "devDependencies": {
         "@tailwindcss/forms": "^0.5.7",
         "@tailwindcss/typography": "^0.5.10",
         "autoprefixer": "^10.4.16",
         "axios": "^1.7.4",
-        "concurrently": "^9.0.1",
         "@vitejs/plugin-vue": "^5.0.0",
         "postcss": "^8.4.32",
         "tailwindcss": "^3.4.0",
@@ -19,5 +19,9 @@
     },
     "dependencies": {
         "alpinejs": "^3.14.8"
+    },
+    "engines": {
+        "node": ">=18.0.0",
+        "npm": ">=9.0.0"
     }
 }

@@ -4,16 +4,24 @@
 # Exit the script if any command fails
 set -e
 
-# Instalar dependencias de PHP
+echo "🚀 Starting build process..."
+
+echo "📦 Installing PHP dependencies..."
 composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 
-# Instalar dependencias de Node.js
-npm ci
+echo "📦 Installing Node.js dependencies..."
+npm ci --no-audit --no-fund
+
+echo "🏗️ Building assets..."
 npm run build
 
-# Optimizar Laravel
+echo "🧹 Clearing Laravel cache..."
 php artisan optimize:clear
+
+echo "⚡ Optimizing Laravel..."
 php artisan config:cache
 php artisan event:cache
 php artisan route:cache
 php artisan view:cache
+
+echo "✅ Build completed successfully!"
