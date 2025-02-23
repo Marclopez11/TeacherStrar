@@ -32,10 +32,10 @@ Route::middleware([
     // Rutas de Escuelas
     Route::post('/schools', [SchoolController::class, 'store'])->name('schools.store');
     Route::post('/schools/join', [SchoolController::class, 'join'])->name('schools.join');
-    Route::get('/schools/{id}', [SchoolController::class, 'show'])->name('schools.show');
-    Route::put('/schools/{id}', [SchoolController::class, 'update'])->name('schools.update');
+    Route::get('/schools/{school}', [SchoolController::class, 'show'])->name('schools.show');
+    Route::put('/schools/{school}', [SchoolController::class, 'update'])->name('schools.update');
     Route::get('/api/schools/search', [SchoolController::class, 'search'])->name('schools.search');
-    Route::post('/schools/{id}/regenerate-logo', [SchoolController::class, 'regenerateLogo'])->name('schools.regenerate-logo');
+    Route::post('/schools/{school}/regenerate-logo', [SchoolController::class, 'regenerateLogo'])->name('schools.regenerate-logo');
 
     // Rutas de Grupos
     Route::get('/schools/{school}/groups', [GroupController::class, 'index'])->name('groups.index');

@@ -71,21 +71,17 @@ class SchoolController extends BaseController
         }
     }
 
-    public function show($id)
+    public function show(School $school)
     {
-        $school = School::with(['groups' => function($query) {
-            $query->withCount(['students', 'attitudes']);
-        }])
-        ->withCount(['groups', 'students', 'users'])
-        ->findOrFail($id);
+        $school->load(['groups' => function($query) {
+            $query->withCount(['students', 'attitudes'])->orderBy('name', 'asc');
+        }]);
 
         return view('schools.show', compact('school'));
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, School $school)
     {
-        $school = School::findOrFail($id);
-
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'city' => ['nullable', 'string', 'max:255'],
@@ -105,10 +101,8 @@ class SchoolController extends BaseController
             ->get();
     }
 
-    public function regenerateLogo($id)
+    public function regenerateLogo(School $school)
     {
-        $school = School::findOrFail($id);
-
         // Generar nueva imagen
         $school->logo_path = $school->generateRandomSchoolImage();
         $school->save();

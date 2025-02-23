@@ -17,7 +17,11 @@ class GroupController extends BaseController
 
     public function index(School $school)
     {
-        $groups = $school->groups()->withCount(['students', 'attitudes'])->get();
+        $groups = $school->groups()
+            ->withCount(['students', 'attitudes'])
+            ->get()
+            ->sortBy('name');
+
         return view('groups.index', compact('school', 'groups'));
     }
 
