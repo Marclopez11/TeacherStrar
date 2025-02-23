@@ -50,13 +50,13 @@
                                 <div class="group bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
                                     <div class="flex items-center space-x-4 mb-4">
                                         @if($school->logo_path)
-                                            <img src="{{ asset('images/' . $school->logo_path) }}"
-                                                 class="h-12 w-12 rounded-xl object-cover"
+                                            <img src="{{ $school->logo_url }}"
+                                                 class="w-20 h-20 rounded-2xl object-cover ring-4 ring-white shadow-lg"
                                                  alt="{{ $school->name }}">
                                         @else
-                                            <div class="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center text-xl">
-                                                🏫
-                                            </div>
+                                            <img src="{{ $school->logo_url }}"
+                                                 class="w-20 h-20 rounded-2xl object-cover ring-4 ring-white shadow-lg"
+                                                 alt="{{ $school->name }}">
                                         @endif
                                         <div>
                                             <h3 class="text-lg font-bold text-gray-900">{{ $school->name }}</h3>
@@ -117,13 +117,13 @@
                                     <div class="flex items-start space-x-4 mb-4">
                                         <div class="flex-shrink-0">
                                             @if($school->logo_path)
-                                                <img src="{{ asset('images/' . $school->logo_path) }}"
-                                                     class="h-16 w-16 rounded-xl object-cover ring-4 ring-white shadow-md"
+                                                <img src="{{ $school->logo_url }}"
+                                                     class="w-20 h-20 rounded-2xl object-cover ring-4 ring-white shadow-lg"
                                                       alt="{{ $school->name }}">
                                             @else
-                                                <div class="h-16 w-16 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 ring-4 ring-white shadow-md flex items-center justify-center text-2xl">
-                                                    🏫
-                                                </div>
+                                                <img src="{{ $school->logo_url }}"
+                                                     class="w-20 h-20 rounded-2xl object-cover ring-4 ring-white shadow-lg"
+                                                      alt="{{ $school->name }}">
                                             @endif
                                         </div>
                                         <div class="flex-1">
@@ -205,6 +205,16 @@
                                    name="name"
                                    required
                                    class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label for="logo_path" class="block text-sm font-medium text-gray-700">URL del Logo</label>
+                            <input type="url"
+                                   id="logo_path"
+                                   name="logo_path"
+                                   class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                   placeholder="https://ejemplo.com/logo.png">
+                            <p class="mt-1 text-sm text-gray-500">Deja vacío para usar un logo generado automáticamente</p>
                         </div>
 
                         <div>

@@ -12,14 +12,13 @@
                 <div class="bg-white rounded-[20px] p-8 shadow-sm border border-gray-100 mb-8">
                     <div class="flex items-start space-x-6">
                         @if ($school->logo_path)
-                            <img src="{{ asset('images/' . $school->logo_path) }}"
+                            <img src="{{ $school->logo_url }}"
                                 class="w-24 h-24 rounded-2xl object-cover ring-4 ring-white shadow-lg"
                                 alt="{{ $school->name }}">
                         @else
-                            <div
-                                class="w-24 h-24 rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100 ring-4 ring-white shadow-lg flex items-center justify-center text-4xl">
-                                🏫
-                            </div>
+                            <img src="{{ $school->logo_url }}"
+                                class="w-24 h-24 rounded-2xl object-cover ring-4 ring-white shadow-lg"
+                                alt="{{ $school->name }}">
                         @endif
                         <div class="flex-1">
                             <div class="flex justify-between items-start">
@@ -67,17 +66,17 @@
                         <div class="bg-indigo-50 rounded-2xl p-6 text-center">
                             <div class="text-3xl mb-2">👥</div>
                             <div class="text-sm font-medium text-gray-600 mb-1">Grupos</div>
-                            <div class="text-2xl font-bold text-indigo-600">{{ $school->groups_count }}</div>
+                            <div class="text-2xl font-bold text-indigo-600">{{ $school->groups_count ?? 0 }}</div>
                         </div>
                         <div class="bg-purple-50 rounded-2xl p-6 text-center">
                             <div class="text-3xl mb-2">👨‍🎓</div>
                             <div class="text-sm font-medium text-gray-600 mb-1">Alumnos</div>
-                            <div class="text-2xl font-bold text-purple-600">{{ $school->students_count }}</div>
+                            <div class="text-2xl font-bold text-purple-600">{{ $school->students_count ?? 0 }}</div>
                         </div>
                         <div class="bg-pink-50 rounded-2xl p-6 text-center">
                             <div class="text-3xl mb-2">👨‍🏫</div>
                             <div class="text-sm font-medium text-gray-600 mb-1">Profesores</div>
-                            <div class="text-2xl font-bold text-pink-600">{{ $school->users_count }}</div>
+                            <div class="text-2xl font-bold text-pink-600">{{ $school->users_count ?? 0 }}</div>
                         </div>
                     </div>
                 </div>
@@ -244,6 +243,17 @@
                                    value="{{ $school->name }}"
                                    required
                                    class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label for="edit_logo_path" class="block text-sm font-medium text-gray-700">URL del Logo</label>
+                            <input type="url"
+                                   id="edit_logo_path"
+                                   name="logo_path"
+                                   value="{{ $school->logo_path }}"
+                                   class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                   placeholder="https://ejemplo.com/logo.png">
+                            <p class="mt-1 text-sm text-gray-500">Deja vacío para usar un logo generado automáticamente</p>
                         </div>
 
                         <div>

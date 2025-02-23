@@ -23,6 +23,7 @@ class SchoolController extends BaseController
             'city' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'password' => ['required', 'string', 'min:6'],
+            'logo_path' => ['nullable', 'url', 'max:255'],
         ]);
 
         $school = School::create($validated);
@@ -80,9 +81,11 @@ class SchoolController extends BaseController
 
     public function show(School $school)
     {
-        $school->load(['groups' => function($query) {
+        // Cargar la escuela con los contadores necesarios
+        $school = $school->load(['groups' => function($query) {
             $query->withCount(['students', 'attitudes'])->orderBy('name', 'asc');
-        }]);
+        }])
+        ->loadCount(['groups', 'students', 'users']);
 
         return view('schools.show', compact('school'));
     }
@@ -94,6 +97,7 @@ class SchoolController extends BaseController
             'city' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'password' => ['nullable', 'string', 'min:6'],
+            'logo_path' => ['nullable', 'url', 'max:255'],
         ]);
 
         if (!empty($validated['password'])) {

@@ -87,4 +87,15 @@ class School extends Model
                     ->withPivot('role')
                     ->withTimestamps();
     }
+
+    public function getLogoUrlAttribute()
+    {
+        if ($this->logo_path) {
+            if (filter_var($this->logo_path, FILTER_VALIDATE_URL)) {
+                return $this->logo_path;
+            }
+            return asset('images/' . $this->logo_path);
+        }
+        return 'https://api.dicebear.com/7.x/shapes/svg?seed=default-school&backgroundColor=ffffff';
+    }
 }
