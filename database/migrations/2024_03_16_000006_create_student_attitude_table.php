@@ -15,6 +15,8 @@ class CreateStudentAttitudeTable extends Migration
             $table->id();
             $table->foreignId('student_id')->constrained()->onDelete('cascade');
             $table->foreignId('attitude_id')->constrained()->onDelete('cascade');
+            $table->integer('points')->default(0);
+            $table->boolean('is_positive')->default(true);
             $table->timestamps();
 
             // Índice compuesto para mejorar el rendimiento de las consultas

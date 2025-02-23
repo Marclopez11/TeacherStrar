@@ -28,35 +28,50 @@ class StudentController extends BaseController
         return view('students.index', compact('school', 'students'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, School $school)
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'group_id' => ['required', 'exists:groups,id'],
-            'avatar_seed' => ['required', 'string'],
-            'avatar_style' => ['required', 'string'],
         ]);
 
         // Obtener el school_id del grupo
         $group = Group::findOrFail($validated['group_id']);
         $validated['school_id'] = $group->school_id;
 
+        // Crear el estudiante sin avatar inicialmente
         $student = Student::create($validated);
+
+        // Intentar asignar un avatar aleatorio
+        if (!$student->assignRandomAvatar()) {
+            // Si no hay avatares disponibles, asignar el default
+            $student->update(['avatar_path' => 'avatars/default.svg']);
+        }
 
         return redirect()->back()
             ->with('success', 'Estudiante creado exitosamente');
     }
 
-    public function updateAvatar(Student $student)
+    public function updateAvatar(School $school, Student $student)
     {
-        // Cambiar aleatoriamente el estilo del avatar
-        $student->update([
-            'avatar_style' => Student::getRandomAvatarStyle(),
-            'avatar_seed' => Str::random(10), // Nuevo seed para nueva apariencia
-        ]);
+        // Verificar que el estudiante pertenece a la escuela
+        if ($student->school_id !== $school->id) {
+            return redirect()->back()
+                ->with('error', 'El estudiante no pertenece a esta escuela');
+        }
+
+        if (!$student->canChangeAvatar()) {
+            return redirect()->back()
+                ->with('error', 'No hay avatares disponibles para cambiar');
+        }
+
+        if ($student->assignRandomAvatar()) {
+            return redirect()->back()
+                ->with('success', 'Avatar actualizado exitosamente');
+        }
 
         return redirect()->back()
-            ->with('success', 'Avatar actualizado exitosamente');
+            ->with('error', 'No se pudo actualizar el avatar');
     }
 
     public function registerAttitude(Request $request, School $school, Student $student)
@@ -78,45 +93,49 @@ class StudentController extends BaseController
                 ], 400);
             }
 
+            // Obtener el total actual de puntos
+            $currentTotal = $student->getCurrentTotalPoints($attitude->group_id);
+
             if ($validated['multiplier'] > 0) {
-                // Añadir una nueva actitud
+                // Siempre añadir puntos positivos
                 $student->attitudes()->attach($attitude->id, [
+                    'points' => $attitude->points,
+                    'is_positive' => true,
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
-                $message = 'Actitud registrada correctamente';
+                $message = 'Actitud positiva registrada correctamente';
             } else {
-                // Buscar y eliminar una sola ocurrencia de la actitud
-                $attitudeToDelete = DB::table('student_attitude')
-                    ->where([
-                        'student_id' => $student->id,
-                        'attitude_id' => $attitude->id,
-                    ])
-                    ->where('created_at', '>=', now()->startOfDay())
-                    ->first();
-
-                if ($attitudeToDelete) {
-                    DB::table('student_attitude')
-                        ->where('id', $attitudeToDelete->id)
-                        ->limit(1)
-                        ->delete();
-
-                    $message = 'Actitud eliminada correctamente';
+                // Para puntos negativos, solo restar si hay puntos positivos acumulados
+                if ($currentTotal > 0) {
+                    $student->attitudes()->attach($attitude->id, [
+                        'points' => $attitude->points, // Ya viene negativo de la BD
+                        'is_positive' => false,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                    $message = 'Actitud negativa registrada correctamente';
                 } else {
-                    DB::rollBack();
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'No hay actitudes para eliminar hoy'
-                    ], 400);
+                    // Si el total es 0, registrar la actitud pero con 0 puntos
+                    $student->attitudes()->attach($attitude->id, [
+                        'points' => 0,
+                        'is_positive' => false,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                    $message = 'Actitud negativa registrada (sin efecto en puntos)';
                 }
             }
 
             DB::commit();
 
+            // Recalcular el total final
+            $finalTotal = $student->getCurrentTotalPoints($attitude->group_id);
+
             return response()->json([
                 'success' => true,
                 'message' => $message,
-                'new_points' => $student->getPointsByGroup($attitude->group_id),
+                'new_points' => $finalTotal,
                 'current_count' => DB::table('student_attitude')
                     ->where([
                         'student_id' => $student->id,

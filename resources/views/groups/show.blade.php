@@ -54,25 +54,49 @@
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Después del header del grupo, añadir las estadísticas -->
-                <div class="bg-white rounded-[20px] p-8 shadow-sm border border-gray-100 mb-8">
-                    <div class="grid grid-cols-2 gap-6">
-                        <div class="bg-indigo-50 rounded-2xl p-6 text-center">
-                            <div class="text-3xl mb-2">👨‍🎓</div>
-                            <div class="text-sm font-medium text-gray-600 mb-1">Alumnos</div>
-                            <div class="text-2xl font-bold text-indigo-600">{{ $group->students->count() }}</div>
-                        </div>
-                        <div class="bg-purple-50 rounded-2xl p-6 text-center">
-                            <div class="text-3xl mb-2">⭐</div>
-                            <div class="text-sm font-medium text-gray-600 mb-1">Actitudes</div>
-                            <div class="text-2xl font-bold text-purple-600">{{ $group->attitudes->count() }}</div>
+                    <!-- Estadísticas Generales -->
+                    <div class="mt-6 space-y-4">
+                        <!-- Resumen General -->
+                        <div class="grid grid-cols-4 gap-3">
+                            <div class="bg-indigo-50 rounded-xl p-3 text-center">
+                                <div class="text-2xl mb-1">👨‍🎓</div>
+                                <div class="text-xs font-medium text-gray-600">Alumnos</div>
+                                <div class="text-lg font-bold text-indigo-600">{{ $group->students->count() }}</div>
+                            </div>
+                            <div class="bg-purple-50 rounded-xl p-3 text-center">
+                                <div class="text-2xl mb-1">⭐</div>
+                                <div class="text-xs font-medium text-gray-600">Actitudes</div>
+                                <div class="text-lg font-bold text-purple-600">{{ $group->attitudes->count() }}</div>
+                            </div>
+                            <div class="bg-green-50 rounded-xl p-3 text-center">
+                                <div class="text-2xl mb-1">📊</div>
+                                <div class="text-xs font-medium text-gray-600">Total Puntos</div>
+                                <div class="text-lg font-bold text-green-600">
+                                    {{ $group->students->sum(function($student) use ($group) {
+                                        return $student->getPointsByGroup($group->id);
+                                    }) }}
+                                </div>
+                            </div>
+                            <div class="bg-blue-50 rounded-xl p-3 text-center">
+                                <div class="text-2xl mb-1">📈</div>
+                                <div class="text-xs font-medium text-gray-600">Media/Alumno</div>
+                                <div class="text-lg font-bold text-blue-600">
+                                    @php
+                                        $studentCount = $group->students->count();
+                                        $totalPoints = $group->students->sum(function($student) use ($group) {
+                                            return $student->getPointsByGroup($group->id);
+                                        });
+                                        $average = $studentCount > 0 ? round($totalPoints / $studentCount, 1) : 0;
+                                    @endphp
+                                    {{ $average }}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Después de las estadísticas -->
+                <!-- Botón de Ranking -->
                 <div class="flex justify-end mb-8">
                     <a href="{{ route('groups.ranking', ['school' => $school->id, 'group' => $group->id]) }}"
                        class="px-4 py-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-sm font-semibold rounded-xl hover:from-yellow-500 hover:to-yellow-600 transition-all duration-300 flex items-center">
@@ -95,24 +119,78 @@
                         </button>
                     </div>
 
+                    <!-- After the "Nuevo Estudiante" button and before the grid of students -->
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="relative flex-1 max-w-xs">
+                            <input type="text"
+                                   id="searchInput"
+                                   placeholder="Buscar estudiantes..."
+                                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <button id="sortButton"
+                                    class="px-4 py-2 bg-white border-2 border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:border-blue-500 hover:text-blue-500 transition-all duration-300 flex items-center">
+                                <span class="mr-2">↑↓</span>
+                                Ordenar A-Z
+                            </button>
+                        </div>
+                    </div>
+
+                    @if($group->attitudes->isNotEmpty())
+                        <div class="bg-gray-50 rounded-xl p-4 mb-6">
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3">Resumen de Actitudes</h4>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                @foreach($group->attitudes as $attitude)
+                                    <div class="bg-white rounded-lg p-3 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm font-medium text-gray-700">{{ $attitude->name }}</span>
+                                            <span class="text-sm font-semibold {{ $attitude->points >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                                {{ $attitude->points > 0 ? '+' : '' }}{{ $attitude->points }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
                     <!-- Grid de Estudiantes -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    <div id="studentsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                         @foreach($group->students as $student)
                             <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-all duration-300">
                                 <!-- Cabecera del Estudiante -->
                                 <div class="p-4 border-b border-gray-100">
-                                    <div class="flex items-center space-x-3">
-                                        @if($student->avatar_url)
-                                            <img src="{{ $student->avatar_url }}"
-                                                 class="w-12 h-12 rounded-xl bg-white p-0.5 shadow-sm"
-                                                 alt="{{ $student->name }}">
-                                        @else
-                                            <div class="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-2xl">
-                                                👤
+                                    <div class="flex items-center space-x-4">
+                                        <div class="relative group">
+                                            <div class="w-16 h-16 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden">
+                                                <img src="{{ asset('images/' . $student->avatar_path) }}"
+                                                     class="w-14 h-14 object-contain"
+                                                     alt="{{ $student->name }}">
                                             </div>
-                                        @endif
-                                        <div>
-                                            <h3 class="font-semibold text-gray-900 truncate">{{ $student->name }}</h3>
+
+                                            @if($student->canChangeAvatar())
+                                                <form action="{{ route('students.update-avatar', ['school' => $school->id, 'student' => $student->id]) }}"
+                                                      method="POST"
+                                                      class="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit"
+                                                            class="p-1 bg-white rounded-lg shadow-sm border border-gray-200 hover:border-blue-500 hover:text-blue-500">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                                        </svg>
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <h3 class="font-semibold text-gray-900 text-base mb-1">{{ $student->name }}</h3>
                                             <div class="flex items-center text-sm">
                                                 <span class="text-gray-500">Puntos:</span>
                                                 <span class="ml-1 font-bold {{ $student->getPointsByGroup($group->id) >= 0 ? 'text-green-600' : 'text-red-600' }}">
@@ -124,59 +202,53 @@
                                 </div>
 
                                 <!-- Lista de Actitudes -->
-                                <div class="p-2 bg-gray-50">
-                                    <!-- Actitudes Registradas Hoy -->
-                                    @php
-                                        $today = now()->format('Y-m-d');
-                                        $actitudesHoy = $student->attitudes()
-                                            ->wherePivot('created_at', '>=', $today)
-                                            ->get()
-                                            ->groupBy('id');
-                                    @endphp
+                                @php
+                                    $today = now()->format('Y-m-d');
+                                    $actitudesHoy = $student->attitudes()
+                                        ->wherePivot('created_at', '>=', $today)
+                                        ->get()
+                                        ->groupBy('id');
+                                @endphp
 
-                                    <!-- Lista de Actitudes Disponibles -->
-                                    <div class="space-y-2">
-                                        <div class="text-xs font-medium text-gray-500 mb-1">Actitudes:</div>
-                                        @foreach($group->attitudes as $attitude)
-                                            @php
-                                                $countToday = isset($actitudesHoy[$attitude->id]) ? $actitudesHoy[$attitude->id]->count() : 0;
-                                            @endphp
-                                            <div class="bg-white rounded-lg p-2 hover:bg-gray-50 transition-colors">
-                                                <div class="flex items-center justify-between">
-                                                    <!-- Nombre de la actitud -->
-                                                    <div class="flex items-center space-x-2">
-                                                        <span class="text-sm font-medium">{{ $attitude->name }}</span>
-                                                        <span class="text-xs font-semibold {{ $attitude->points >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                                            ({{ $attitude->points > 0 ? '+' : '' }}{{ $attitude->points }})
-                                                        </span>
-                                                    </div>
+                                @if($actitudesHoy->isNotEmpty())
+                                    <div class="p-2 bg-gray-50">
+                                        <div class="p-3 bg-gray-50">
+                                            <h4 class="text-sm font-medium text-gray-600 mb-2">Actitudes de Hoy</h4>
+                                            <div class="space-y-2">
+                                                @foreach($actitudesHoy as $actitudeGroup)
+                                                    @php
+                                                        $attitude = $actitudeGroup->first();
+                                                        $count = $actitudeGroup->count();
+                                                        $isPositive = $attitude->pivot->is_positive;
+                                                    @endphp
 
-                                                    <!-- Controles -->
-                                                    <div class="flex items-center space-x-3">
-                                                        <!-- Contador del día -->
-                                                        <div class="px-2 py-1 bg-gray-100 rounded text-sm font-bold {{ $countToday > 0 ? 'text-blue-600' : 'text-gray-400' }}">
-                                                            {{ $countToday }}
-                                                        </div>
-
-                                                        <!-- Botones de control -->
-                                                        <div class="flex items-center rounded-lg border border-gray-200 divide-x">
-                                                            @if($countToday > 0)
-                                                                <button onclick="registrarActitud({{ $student->id }}, {{ $attitude->id }}, 'remove')"
-                                                                        class="px-2 py-1 hover:bg-red-50 text-red-600 rounded-l-lg transition-colors">
-                                                                    <span class="text-sm">-</span>
-                                                                </button>
+                                                    <div class="flex items-center justify-between bg-white rounded-lg p-2 border border-gray-100">
+                                                        <div class="flex items-center space-x-2">
+                                                            <span class="text-lg">{{ $isPositive ? '✅' : '❌' }}</span>
+                                                            <span class="text-sm font-medium text-gray-700">{{ $attitude->name }}</span>
+                                                            @if($count > 1)
+                                                                <span class="px-2 py-0.5 bg-gray-100 rounded-full text-xs font-medium text-gray-600">
+                                                                    x{{ $count }}
+                                                                </span>
                                                             @endif
-                                                            <button onclick="registrarActitud({{ $student->id }}, {{ $attitude->id }}, 'add')"
-                                                                    class="px-2 py-1 hover:bg-green-50 text-green-600 {{ $countToday > 0 ? 'rounded-r-lg' : 'rounded-lg' }} transition-colors">
-                                                                <span class="text-sm">+</span>
+                                                        </div>
+                                                        <div class="flex items-center space-x-1">
+                                                            <span class="text-sm font-semibold {{ $isPositive ? 'text-green-600' : 'text-red-600' }}">
+                                                                {{ $isPositive ? '+' : '' }}{{ $attitude->pivot->points }}
+                                                            </span>
+                                                            <button onclick="removeAttitude('{{ $school->id }}', '{{ $student->id }}', '{{ $attitude->id }}')"
+                                                                    class="p-1 text-gray-400 hover:text-red-500 transition-colors">
+                                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                                </svg>
                                                             </button>
                                                         </div>
                                                     </div>
-                                                </div>
+                                                @endforeach
                                             </div>
-                                        @endforeach
+                                        </div>
                                     </div>
-                                </div>
+                                @endif
                             </div>
                         @endforeach
                     </div>
@@ -318,7 +390,7 @@
                             class="text-gray-400 hover:text-gray-500">
                         <span class="sr-only">Cerrar</span>
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </button>
                 </div>
@@ -326,19 +398,8 @@
                 <form action="{{ route('students.store', ['school' => $school->id]) }}" method="POST">
                     @csrf
                     <input type="hidden" name="group_id" value="{{ $group->id }}">
-                    <input type="hidden" name="avatar_seed" id="avatar_seed" value="{{ Str::random(10) }}">
-                    <input type="hidden" name="avatar_style" id="avatar_style" value="avataaars">
 
                     <div class="space-y-6">
-                        <!-- Avatar Preview -->
-                        <div class="flex flex-col items-center">
-                            <img id="avatar-preview" src="" alt="Avatar Preview" class="w-32 h-32 rounded-2xl mb-4">
-                            <button type="button" onclick="regenerateAvatar()"
-                                    class="px-4 py-2 bg-white border-2 border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:border-blue-500 hover:text-blue-500 transition-all duration-300">
-                                🎲 Regenerar Avatar
-                            </button>
-                        </div>
-
                         <div>
                             <label for="name" class="block text-sm font-medium text-gray-700">Nombre del Estudiante</label>
                             <input type="text"
@@ -551,5 +612,57 @@ document.getElementById('modal-confirm').addEventListener('click', function() {
 // Evento para cancelar la acción
 document.getElementById('modal-cancel').addEventListener('click', function() {
     document.getElementById('modal-confirmar').classList.add('hidden');
+});
+
+// Sorting and filtering functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const grid = document.getElementById('studentsGrid');
+    const searchInput = document.getElementById('searchInput');
+    const sortButton = document.getElementById('sortButton');
+    let isAscending = true;
+
+    // Function to get all student cards
+    const getStudentCards = () => Array.from(grid.children);
+
+    // Function to get student name from card
+    const getStudentName = card => {
+        return card.querySelector('h3').textContent.trim().toLowerCase();
+    };
+
+    // Function to sort students
+    const sortStudents = () => {
+        const cards = getStudentCards();
+        const sortedCards = cards.sort((a, b) => {
+            const nameA = getStudentName(a);
+            const nameB = getStudentName(b);
+            return isAscending ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+        });
+
+        // Clear and re-append cards in new order
+        grid.innerHTML = '';
+        sortedCards.forEach(card => grid.appendChild(card));
+
+        // Update button text
+        sortButton.innerHTML = `<span class="mr-2">↑↓</span>Ordenar ${isAscending ? 'Z-A' : 'A-Z'}`;
+        isAscending = !isAscending;
+    };
+
+    // Function to filter students
+    const filterStudents = () => {
+        const searchTerm = searchInput.value.toLowerCase();
+        const cards = getStudentCards();
+
+        cards.forEach(card => {
+            const name = getStudentName(card);
+            card.style.display = name.includes(searchTerm) ? '' : 'none';
+        });
+    };
+
+    // Event listeners
+    sortButton.addEventListener('click', sortStudents);
+    searchInput.addEventListener('input', filterStudents);
+
+    // Initial sort
+    sortStudents();
 });
 </script>

@@ -153,7 +153,22 @@ class GroupController extends BaseController
 
     public function ranking(School $school, Group $group)
     {
-        $group->load(['students', 'attitudes']);
-        return view('groups.ranking', compact('school', 'group'));
+        $sort = request('sort', 'alpha'); // Default to alphabetical sorting
+
+        $students = $group->students; // Get the collection first
+
+        if ($sort === 'points') {
+            $students = $students->sortByDesc(function($student) use ($group) {
+                return $student->getPointsByGroup($group->id);
+            });
+        } else {
+            $students = $students->sortBy('name');
+        }
+
+        return view('groups.ranking', [
+            'school' => $school,
+            'group' => $group,
+            'students' => $students
+        ]);
     }
 }

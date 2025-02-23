@@ -4,10 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Log;
 
 class Student extends Model
 {
@@ -17,74 +16,23 @@ class Student extends Model
         'name',
         'school_id',
         'group_id',
-        'avatar_seed',
-        'avatar_style',
         'avatar_path'
     ];
 
     protected $appends = ['avatar_url'];
 
-    // Estilos disponibles de avatares
-    public static function getAvatarStyles()
+    public function getAvatarUrlAttribute()
     {
-        return [
-            'avataaars' => [
-                'name' => 'Personaje',
-                'options' => '&mouth[]=smile&eyes[]=happy&top[]=hat&accessories[]=round&facialHair[]=none&clothing[]=hoodie'
-            ],
-            'bottts' => [
-                'name' => 'Robot',
-                'options' => '&textureChance=50&mouthChance=50&sidesChance=50&topChance=50'
-            ],
-            'notionists' => [
-                'name' => 'Monstruito',
-                'options' => '&rotation=0'
-            ],
-            'open-peeps' => [
-                'name' => 'Peeps',
-                'options' => '&mood=happy'
-            ],
-            'big-smile' => [
-                'name' => 'Sonriente',
-                'options' => ''
-            ],
-            'micah' => [
-                'name' => 'Colorido',
-                'options' => '&baseColor[]=indigo&mouth[]=smile&hair[]=messy'
-            ],
-        ];
-    }
-
-    // Seleccionar estilo aleatorio
-    public static function getRandomAvatarStyle(): string
-    {
-        $styles = [
-            'avataaars',
-            'bottts',
-            'pixelart',
-            'lorelei',
-            'adventurer',
-            'big-ears',
-            'croodles'
-        ];
-
-        return $styles[array_rand($styles)];
-    }
-
-    // URL del avatar usando DiceBear
-    public function getAvatarUrlAttribute(): string
-    {
-        if ($this->avatar_path && file_exists(public_path('images/students/' . $this->avatar_path))) {
-            return asset('images/students/' . $this->avatar_path);
+        if ($this->avatar_path) {
+            // Añadir parámetro de fondo si es necesario
+            $path = 'images/' . $this->avatar_path;
+            if (str_ends_with($path, '.svg')) {
+                // Puedes personalizar el color de fondo aquí
+                return asset($path) . '?background=f8fafc'; // Color gris muy claro
+            }
+            return asset($path);
         }
-
-        return "https://api.dicebear.com/7.x/{$this->avatar_style}/svg?seed={$this->avatar_seed}&backgroundColor=transparent";
-    }
-
-    // URL alternativa usando Multiavatar (más colorido y divertido)
-    public function getMultiavatarUrlAttribute()
-    {
-        return "https://api.multiavatar.com/{$this->avatar_seed}.svg";
+        return asset('images/avatars/default.svg');
     }
 
     public function school(): BelongsTo
@@ -103,32 +51,105 @@ class Student extends Model
             ->withTimestamps();
     }
 
-    // Obtener puntos totales por grupo
-    public function getPointsByGroup($groupId): int
+    public function attitudePoints()
     {
-        return $this->attitudes()
-            ->where('group_id', $groupId)
-            ->sum('points');
+        return $this->belongsToMany(Attitude::class, 'student_attitude')
+            ->withPivot('points')
+            ->withTimestamps();
     }
 
-    public function generateAndSaveAvatar(): bool
+    /**
+     * Obtener los avatares disponibles para el grupo
+     */
+    public function getAvailableAvatars(): array
     {
-        try {
-            $imageUrl = "https://api.dicebear.com/7.x/{$this->avatar_style}/svg?seed={$this->avatar_seed}&backgroundColor=transparent";
-            $imageContent = Http::get($imageUrl)->body();
+        // Obtener todos los archivos de avatar de la carpeta
+        $avatarFiles = glob(public_path('images/avatars/*.svg'));
+        if (empty($avatarFiles)) {
+            Log::warning('No se encontraron avatares en public/images/avatars/');
+            return [];
+        }
 
-            if (!file_exists(public_path('images/students'))) {
-                mkdir(public_path('images/students'), 0755, true);
-            }
+        // Convertir rutas absolutas a relativas
+        $allAvatars = array_map(function($path) {
+            return 'avatars/' . basename($path);
+        }, $avatarFiles);
 
-            $filename = "avatar_{$this->id}_{$this->avatar_seed}.svg";
-            file_put_contents(public_path('images/students/' . $filename), $imageContent);
+        // Excluir default.svg si existe
+        $allAvatars = array_filter($allAvatars, function($path) {
+            return $path !== 'avatars/default.svg';
+        });
 
-            $this->avatar_path = 'students/' . $filename;
-            return $this->save();
-        } catch (\Exception $e) {
-            \Log::error('Error generando avatar: ' . $e->getMessage());
+        // Obtener avatares en uso en el mismo grupo
+        $usedAvatars = Student::where('group_id', $this->group_id)
+            ->where('id', '!=', $this->id ?? 0)
+            ->pluck('avatar_path')
+            ->toArray();
+
+        // Retornar solo los avatares disponibles
+        $availableAvatars = array_values(array_diff($allAvatars, $usedAvatars));
+
+        Log::info('Avatares disponibles:', [
+            'total' => count($allAvatars),
+            'en_uso' => count($usedAvatars),
+            'disponibles' => count($availableAvatars)
+        ]);
+
+        return $availableAvatars;
+    }
+
+    /**
+     * Asignar un avatar aleatorio disponible
+     */
+    public function assignRandomAvatar(): bool
+    {
+        $availableAvatars = $this->getAvailableAvatars();
+
+        if (empty($availableAvatars)) {
+            Log::warning('No hay avatares disponibles para asignar');
             return false;
         }
+
+        $this->avatar_path = $availableAvatars[array_rand($availableAvatars)];
+        return $this->save();
+    }
+
+    /**
+     * Verificar si se puede cambiar el avatar
+     */
+    public function canChangeAvatar(): bool
+    {
+        return count($this->getAvailableAvatars()) > 0;
+    }
+
+    public function getCurrentTotalPoints($groupId): int
+    {
+        // Obtener todas las actitudes ordenadas por fecha
+        $attitudes = $this->attitudePoints()
+            ->where('group_id', $groupId)
+            ->orderBy('student_attitude.created_at')
+            ->get();
+
+        $total = 0;
+
+        foreach ($attitudes as $attitude) {
+            if ($attitude->pivot->points > 0) {
+                // Siempre sumar puntos positivos
+                $total += $attitude->pivot->points;
+            } else if ($total > 0) {
+                // Solo restar si hay puntos acumulados
+                $total += $attitude->pivot->points;
+                // No permitir que el total sea negativo
+                $total = max(0, $total);
+            }
+            // Si el total es 0 y los puntos son negativos, no hacer nada
+        }
+
+        return $total;
+    }
+
+    public function getPointsByGroup($groupId): int
+    {
+        return $this->getCurrentTotalPoints($groupId);
     }
 }

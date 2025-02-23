@@ -53,7 +53,8 @@ Route::middleware([
     Route::get('/schools/{school}/students/{student}', [StudentController::class, 'show'])->name('students.show');
     Route::put('/schools/{school}/students/{student}', [StudentController::class, 'update'])->name('students.update');
     Route::delete('/schools/{school}/students/{student}', [StudentController::class, 'destroy'])->name('students.destroy');
-    Route::patch('/schools/{school}/students/{student}/avatar', [StudentController::class, 'updateAvatar'])->name('students.update-avatar');
+    Route::patch('/schools/{school}/students/{student}/avatar', [StudentController::class, 'updateAvatar'])
+        ->name('students.update-avatar');
     Route::post('/schools/{school}/students/{student}/attitudes', [StudentController::class, 'registerAttitude'])
         ->name('students.register-attitude');
     Route::delete('/schools/{school}/students/{student}/attitudes/{attitude}', [StudentController::class, 'removeAttitude'])
