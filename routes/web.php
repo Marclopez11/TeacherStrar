@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SchoolController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\GroupController;
+use App\Http\Controllers\SchoolScheduleController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -61,4 +62,11 @@ Route::middleware([
         ->name('students.remove-attitude');
     Route::post('/schools/{school}/students/{student}/quick-attitude', [StudentController::class, 'quickAttitude'])
         ->name('students.quick-attitude');
+
+    // Rutas de Horarios
+    Route::get('/schools/{school}/schedule', [SchoolScheduleController::class, 'index'])->name('schools.schedule');
+    Route::post('/schools/{school}/time-slots', [SchoolScheduleController::class, 'storeTimeSlots'])->name('schools.time-slots.store');
+    Route::post('/schools/{school}/groups/{group}/schedule', [SchoolScheduleController::class, 'updateSchedule'])->name('schools.schedule.update');
+    Route::get('/schools/{school}/groups/{group}/schedule/pdf', [SchoolScheduleController::class, 'downloadPdf'])
+        ->name('schools.schedule.pdf');
 });

@@ -53,6 +53,11 @@
                                         <span class="mr-2">✏️</span>
                                         Editar
                                     </button>
+                                    <a href="{{ route('schools.schedule', $school) }}"
+                                        class="px-4 py-2 bg-white border-2 border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:border-blue-500 hover:text-blue-500 transition-all duration-300 flex items-center">
+                                        <span class="mr-2">📅</span>
+                                        Horarios
+                                    </a>
                                 </div>
                             </div>
                             @if ($school->description)
