@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Facades\Hash;
 
 class SchoolController extends BaseController
 {
@@ -21,6 +22,7 @@ class SchoolController extends BaseController
             'name' => ['required', 'string', 'max:255'],
             'city' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'password' => ['required', 'string', 'min:6'],
         ]);
 
         $school = School::create($validated);
@@ -35,7 +37,7 @@ class SchoolController extends BaseController
             $user->save();
         }
 
-        return to_route('schools.show', $school->id)
+        return to_route('schools.show', $school)
             ->with('success', 'Escuela creada exitosamente');
     }
 
@@ -44,11 +46,16 @@ class SchoolController extends BaseController
         try {
             $validated = $request->validate([
                 'code' => ['required', 'string', 'exists:schools,code'],
+                'password' => ['required', 'string'],
             ]);
 
             /** @var User $user */
             $user = Auth::user();
             $school = School::where('code', $validated['code'])->firstOrFail();
+
+            if ($validated['password'] !== $school->password) {
+                return back()->with('error', 'La contraseña es incorrecta');
+            }
 
             // Verificar si el usuario ya está en la escuela
             if ($school->users()->where('user_id', $user->id)->exists()) {
@@ -86,7 +93,14 @@ class SchoolController extends BaseController
             'name' => ['required', 'string', 'max:255'],
             'city' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'password' => ['nullable', 'string', 'min:6'],
         ]);
+
+        if (!empty($validated['password'])) {
+            // La contraseña se guarda sin encriptar
+        } else {
+            unset($validated['password']);
+        }
 
         $school->update($validated);
 

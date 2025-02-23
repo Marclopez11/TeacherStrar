@@ -106,73 +106,67 @@
                     <div class="bg-white rounded-[20px] p-6 shadow-sm border border-gray-100">
                         <div class="flex justify-between items-center mb-6">
                             <div>
-                                <h2 class="text-xl font-bold text-gray-900">Unirse a una Escuela</h2>
-                                <p class="text-sm text-gray-500">Explora y únete a otras escuelas</p>
+                                <h2 class="text-xl font-bold text-gray-900">Escuelas Disponibles</h2>
+                                <p class="text-sm text-gray-500 mt-1">Únete a otras escuelas de la comunidad</p>
                             </div>
                         </div>
 
-                        <div class="space-y-6">
-                            <!-- Formulario de código -->
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900 mb-4">Unirse con código</h3>
-                                <form action="{{ route('schools.join') }}" method="POST" class="max-w-md">
-                                    @csrf
-                                    <div class="flex gap-4">
-                                        <div class="flex-1">
-                                            <input type="text"
-                                                   name="code"
-                                                   required
-                                                   placeholder="Ingresa el código de la escuela"
-                                                   class="w-full px-4 py-2 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500">
-                                        </div>
-                                        <button type="submit"
-                                                class="px-6 py-2 bg-white border-2 border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:border-blue-500 hover:text-blue-500 transition-all duration-300 flex items-center">
-                                            <span class="mr-2">🤝</span>
-                                            Unirse
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-
-                            <!-- Lista de escuelas disponibles -->
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900 mb-4">Escuelas disponibles</h3>
-                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    @foreach($availableSchools as $school)
-                                        <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                                            <div class="flex items-center space-x-3 mb-3">
-                                                @if($school->logo_path)
-                                                    <img src="{{ asset('images/' . $school->logo_path) }}"
-                                                         class="h-12 w-12 rounded-xl object-cover"
-                                                         alt="{{ $school->name }}">
-                                                @else
-                                                    <div class="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center text-xl">
-                                                        🏫
-                                                    </div>
-                                                @endif
-                                                <div>
-                                                    <h4 class="font-semibold text-gray-900">{{ $school->name }}</h4>
-                                                    @if($school->city)
-                                                        <p class="text-sm text-gray-500">📍 {{ $school->city }}</p>
-                                                    @endif
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            @foreach($availableSchools as $school)
+                                <div class="group bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-100 hover:shadow-lg transition-all duration-300">
+                                    <div class="flex items-start space-x-4 mb-4">
+                                        <div class="flex-shrink-0">
+                                            @if($school->logo_path)
+                                                <img src="{{ asset('images/' . $school->logo_path) }}"
+                                                     class="h-16 w-16 rounded-xl object-cover ring-4 ring-white shadow-md"
+                                                      alt="{{ $school->name }}">
+                                            @else
+                                                <div class="h-16 w-16 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 ring-4 ring-white shadow-md flex items-center justify-center text-2xl">
+                                                    🏫
                                                 </div>
-                                            </div>
-                                            <form action="{{ route('schools.join') }}" method="POST">
-                                                @csrf
-                                                <input type="hidden" name="code" value="{{ $school->code }}">
-                                                <button type="submit"
-                                                        class="w-full px-4 py-2 bg-white border-2 border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:border-blue-500 hover:text-blue-500 transition-all duration-300 flex items-center justify-center">
-                                                    <span class="mr-2">🤝</span>
-                                                    Unirse
-                                                </button>
-                                            </form>
-                                            <div class="text-xs text-gray-500 mt-2">
-                                                Código: {{ $school->code }}
-                                            </div>
+                                            @endif
                                         </div>
-                                    @endforeach
+                                        <div class="flex-1">
+                                            <h4 class="text-lg font-bold text-gray-900">{{ $school->name }}</h4>
+                                            @if($school->city)
+                                                <p class="text-sm text-gray-600 flex items-center mt-1">
+                                                    <span class="mr-1">📍</span> {{ $school->city }}
+                                                </p>
+                                            @endif
+                                            <p class="text-sm text-gray-600 flex items-center mt-1">
+                                                <span class="mr-1">🔑</span> {{ $school->code }}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <form action="{{ route('schools.join') }}" method="POST" class="mt-4">
+                                        @csrf
+                                        <input type="hidden" name="code" value="{{ $school->code }}">
+                                        <div class="flex items-center space-x-3">
+                                            <input type="password"
+                                                   name="password"
+                                                   required
+                                                   class="flex-1 px-4 py-2 text-sm border border-gray-200 rounded-xl focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                                   placeholder="Contraseña">
+                                            <button type="submit"
+                                                    class="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-sm font-semibold rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 flex items-center justify-center whitespace-nowrap">
+                                                <span class="mr-2">🤝</span>
+                                                Unirse
+                                            </button>
+                                        </div>
+                                    </form>
                                 </div>
-                            </div>
+                            @endforeach
+
+                            @if($availableSchools->isEmpty())
+                                <div class="col-span-full text-center py-8">
+                                    <div class="inline-flex h-20 w-20 items-center justify-center rounded-full bg-gray-100 mb-4">
+                                        <span class="text-4xl">🔍</span>
+                                    </div>
+                                    <h3 class="text-lg font-semibold text-gray-900">No hay escuelas disponibles</h3>
+                                    <p class="text-gray-500 mt-2">Todas las escuelas ya están conectadas contigo</p>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -219,6 +213,18 @@
                                    id="city"
                                    name="city"
                                    class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-gray-700">Contraseña de la Escuela</label>
+                            <input type="password"
+                                   id="password"
+                                   name="password"
+                                   required
+                                   minlength="6"
+                                   class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                   placeholder="Mínimo 6 caracteres">
+                            <p class="mt-1 text-sm text-gray-500">Esta contraseña será necesaria para que otros profesores se unan a la escuela</p>
                         </div>
 
                         <div>

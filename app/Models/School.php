@@ -19,8 +19,13 @@ class School extends Model
         'name',
         'city',
         'code',
+        'password',
         'description',
         'logo_path'
+    ];
+
+    protected $hidden = [
+        'password',
     ];
 
     protected static function boot()
@@ -29,7 +34,9 @@ class School extends Model
 
         static::creating(function ($school) {
             $school->code = strtoupper(Str::random(6));
-            $school->logo_path = $school->generateRandomSchoolImage();
+            if (!$school->logo_path) {
+                $school->logo_path = $school->generateRandomSchoolImage();
+            }
         });
     }
 
