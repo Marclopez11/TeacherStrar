@@ -4,7 +4,9 @@ namespace App\Providers;
 
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use App\Models\School;
+use App\Models\TeacherScheduleEntry;
 use App\Policies\SchoolPolicy;
+use App\Policies\TeacherSchedulePolicy;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -15,6 +17,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         School::class => SchoolPolicy::class,
+        TeacherScheduleEntry::class => TeacherSchedulePolicy::class,
     ];
 
     /**
@@ -34,6 +37,6 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        $this->registerPolicies();
     }
 }

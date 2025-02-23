@@ -6,28 +6,29 @@ use App\Models\School;
 use App\Models\Group;
 use App\Models\TimeSlot;
 use App\Models\ScheduleEntry;
+use App\Models\TeacherScheduleEntry;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class SchoolScheduleController extends Controller
 {
-    public function index(School $school, Request $request)
+    use AuthorizesRequests;
+
+    public function index(School $school)
     {
-        $selectedGroup = null;
+        $this->authorize('view', [TeacherScheduleEntry::class, $school]);
+
         $timeSlots = TimeSlot::where('school_id', $school->id)
             ->orderBy('order')
             ->get();
-        $scheduleEntries = collect();
 
-        if ($request->has('group')) {
-            $selectedGroup = $school->groups()->findOrFail($request->group);
-            $scheduleEntries = ScheduleEntry::where('school_id', $school->id)
-                ->where('group_id', $selectedGroup->id)
-                ->get();
-        }
+        $scheduleEntries = TeacherScheduleEntry::where('school_id', $school->id)
+            ->where('user_id', auth()->id())
+            ->get();
 
-        return view('schools.schedule', compact('school', 'selectedGroup', 'timeSlots', 'scheduleEntries'));
+        return view('schools.schedule', compact('school', 'timeSlots', 'scheduleEntries'));
     }
 
     public function storeTimeSlots(School $school, Request $request)
@@ -86,27 +87,23 @@ class SchoolScheduleController extends Controller
         return back()->with('success', 'Franjas horarias actualizadas correctamente');
     }
 
-    public function updateSchedule(School $school, Group $group, Request $request)
+    public function updateSchedule(School $school, Request $request)
     {
+        $this->authorize('manage', [TeacherScheduleEntry::class, $school]);
+
         $entries = $request->input('entries', []);
 
-        DB::transaction(function () use ($school, $group, $entries) {
-            // Eliminar solo las entradas existentes para las franjas horarias que se están actualizando
-            $timeSlotIds = array_keys($entries);
-            if (!empty($timeSlotIds)) {
-                ScheduleEntry::where('school_id', $school->id)
-                    ->where('group_id', $group->id)
-                    ->whereIn('time_slot_id', $timeSlotIds)
-                    ->delete();
-            }
+        DB::transaction(function () use ($school, $entries) {
+            TeacherScheduleEntry::where('school_id', $school->id)
+                ->where('user_id', auth()->id())
+                ->delete();
 
-            // Crear nuevas entradas
             foreach ($entries as $timeSlotId => $days) {
                 foreach ($days as $day => $data) {
                     if (!empty($data['subject'])) {
-                        ScheduleEntry::create([
+                        TeacherScheduleEntry::create([
                             'school_id' => $school->id,
-                            'group_id' => $group->id,
+                            'user_id' => auth()->id(),
                             'time_slot_id' => $timeSlotId,
                             'day' => $day,
                             'subject' => $data['subject']
@@ -119,21 +116,24 @@ class SchoolScheduleController extends Controller
         return back()->with('success', 'Horario actualizado correctamente');
     }
 
-    public function downloadPdf(School $school, Group $group)
+    public function downloadPdf(School $school)
     {
+        $this->authorize('view', [TeacherScheduleEntry::class, $school]);
+
         $timeSlots = TimeSlot::where('school_id', $school->id)
             ->orderBy('order')
             ->get();
 
-        $scheduleEntries = ScheduleEntry::where('school_id', $school->id)
-            ->where('group_id', $group->id)
+        $scheduleEntries = TeacherScheduleEntry::where('school_id', $school->id)
+            ->where('user_id', auth()->id())
             ->get();
 
-        $pdf = Pdf::loadView('pdf.schedule', compact('school', 'group', 'timeSlots', 'scheduleEntries'));
+        $user = auth()->user();
 
-        // Configurar el PDF en horizontal
+        $pdf = Pdf::loadView('pdf.schedule', compact('school', 'timeSlots', 'scheduleEntries', 'user'));
+
         $pdf->setPaper('a4', 'landscape');
 
-        return $pdf->download("horario-{$group->name}.pdf");
+        return $pdf->download("horario-profesor.pdf");
     }
 }

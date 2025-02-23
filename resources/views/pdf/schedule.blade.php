@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Horario - {{ $group->name }}</title>
+    <title>Horario</title>
     <style>
         @page {
             margin: 1.5cm;
@@ -139,7 +139,7 @@
 <body>
     <div class="header">
         <h1 class="school-name">{{ $school->name }}</h1>
-        <h2 class="group-name">Horario Académico • {{ $group->name }}</h2>
+        <h2 class="group-name">Horario del Profesor: {{ $user->name }}</h2>
     </div>
 
     <table>

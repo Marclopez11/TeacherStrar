@@ -64,9 +64,14 @@ Route::middleware([
         ->name('students.quick-attitude');
 
     // Rutas de Horarios
-    Route::get('/schools/{school}/schedule', [SchoolScheduleController::class, 'index'])->name('schools.schedule');
-    Route::post('/schools/{school}/time-slots', [SchoolScheduleController::class, 'storeTimeSlots'])->name('schools.time-slots.store');
-    Route::post('/schools/{school}/groups/{group}/schedule', [SchoolScheduleController::class, 'updateSchedule'])->name('schools.schedule.update');
-    Route::get('/schools/{school}/groups/{group}/schedule/pdf', [SchoolScheduleController::class, 'downloadPdf'])
-        ->name('schools.schedule.pdf');
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/schools/{school}/schedule', [SchoolScheduleController::class, 'index'])
+            ->name('schools.schedule');
+        Route::post('/schools/{school}/schedule', [SchoolScheduleController::class, 'updateSchedule'])
+            ->name('schools.schedule.update');
+        Route::get('/schools/{school}/schedule/pdf', [SchoolScheduleController::class, 'downloadPdf'])
+            ->name('schools.schedule.pdf');
+        Route::post('/schools/{school}/time-slots', [SchoolScheduleController::class, 'storeTimeSlots'])
+            ->name('schools.time-slots.store');
+    });
 });
