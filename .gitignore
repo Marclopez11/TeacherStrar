@@ -1,25 +1,22 @@
-/.phpunit.cache
 /node_modules
-/public/build
 /public/hot
 /public/storage
 /storage/*.key
-/storage/pail
 /vendor
 .env
 .env.backup
-.env.production
-.phpactor.json
 .phpunit.result.cache
+docker-compose.override.yml
 Homestead.json
 Homestead.yaml
 npm-debug.log
 yarn-error.log
-/auth.json
-/.fleet
 /.idea
-/.nova
 /.vscode
+<<<<<<< HEAD
 /.zed
 /public/css/app.css
 /public/js/app.js
+=======
+
+>>>>>>> 9c15d1aae1a791efaa56f70173cc365afe1dc949
