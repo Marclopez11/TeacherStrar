@@ -13,10 +13,6 @@
 
         <!-- Styles -->
         <link href="{{ asset('css/app.css') }}" rel="stylesheet">
-<<<<<<< HEAD
-        <script src="{{ asset('js/app.js') }}" defer></script>
-=======
->>>>>>> 9c15d1aae1a791efaa56f70173cc365afe1dc949
         @stack('styles')
 
         <!-- Scripts -->
