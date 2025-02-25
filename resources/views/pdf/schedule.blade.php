@@ -161,7 +161,7 @@
                     @foreach(['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'] as $day)
                         <td class="subject-cell">
                             @if($slot->is_break)
-                                <span class="break-text">Descanso</span>
+                                <span class="break-text">Pati</span>
                             @else
                                 {{ $scheduleEntries->first(function($entry) use ($slot, $day) {
                                     return $entry->time_slot_id === $slot->id && $entry->day === $day;
