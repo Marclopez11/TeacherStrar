@@ -60,6 +60,10 @@ class GroupController extends BaseController
             'new_attitudes.*' => ['required', 'string', 'max:255'],
             'new_attitude_points' => ['nullable', 'array'],
             'new_attitude_points.*' => ['required', 'integer'],
+            'existing_attitudes' => ['nullable', 'array'],
+            'existing_attitudes.*' => ['required', 'exists:attitudes,id'],
+            'existing_attitude_points' => ['nullable', 'array'],
+            'existing_attitude_points.*' => ['required', 'integer'],
         ]);
 
         $group = $school->groups()->create([
@@ -72,10 +76,43 @@ class GroupController extends BaseController
             foreach ($validated['new_attitudes'] as $index => $name) {
                 if (!empty($name)) {
                     $points = $validated['new_attitude_points'][$index];
-                    $group->attitudes()->create([
-                        'name' => $name,
-                        'points' => $points,
-                    ]);
+
+                    // Verificar si ya existe una actitud con el mismo nombre y puntos
+                    $existingAttitude = Attitude::whereHas('group', function($query) use ($school) {
+                        $query->where('school_id', $school->id);
+                    })->where('name', $name)
+                      ->where('points', $points)
+                      ->first();
+
+                    if (!$existingAttitude) {
+                        $group->attitudes()->create([
+                            'name' => $name,
+                            'points' => $points,
+                        ]);
+                    }
+                }
+            }
+        }
+
+        // Copiar actitudes existentes
+        if (!empty($validated['existing_attitudes'])) {
+            foreach ($validated['existing_attitudes'] as $index => $attitudeId) {
+                $existingAttitude = Attitude::find($attitudeId);
+                if ($existingAttitude) {
+                    $points = $validated['existing_attitude_points'][$index] ?? $existingAttitude->points;
+
+                    // Verificar si ya existe una actitud con el mismo nombre y puntos
+                    $duplicateAttitude = $group->attitudes()
+                        ->where('name', $existingAttitude->name)
+                        ->where('points', $points)
+                        ->first();
+
+                    if (!$duplicateAttitude) {
+                        $group->attitudes()->create([
+                            'name' => $existingAttitude->name,
+                            'points' => $points,
+                        ]);
+                    }
                 }
             }
         }
