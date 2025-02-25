@@ -11,6 +11,7 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class GroupController extends BaseController
 {
@@ -57,34 +58,67 @@ class GroupController extends BaseController
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'new_attitudes' => ['nullable', 'array'],
-            'new_attitudes.*' => ['required', 'string', 'max:255'],
+            'new_attitudes.*' => ['nullable', 'string', 'max:255'],
             'new_attitude_points' => ['nullable', 'array'],
-            'new_attitude_points.*' => ['required', 'integer'],
+            'new_attitude_points.*' => ['nullable', 'integer'],
             'existing_attitudes' => ['nullable', 'array'],
-            'existing_attitudes.*' => ['required', 'exists:attitudes,id'],
-            'existing_attitude_points' => ['nullable', 'array'],
-            'existing_attitude_points.*' => ['required', 'integer'],
+            'existing_attitudes.*' => ['nullable', 'exists:attitudes,id'],
+            'existing_attitude_points' => ['nullable', 'json'],
         ]);
 
-        $group = $school->groups()->create([
-            'name' => $validated['name'],
-            'description' => $validated['description'],
-        ]);
+        try {
+            DB::beginTransaction();
 
-        // Crear nuevas actitudes
-        if (!empty($validated['new_attitudes'])) {
-            foreach ($validated['new_attitudes'] as $index => $name) {
-                if (!empty($name)) {
-                    $points = $validated['new_attitude_points'][$index];
-                    $group->attitudes()->create([
-                        'name' => $name,
-                        'points' => $points,
-                    ]);
+            // Crear el grupo primero
+            $group = $school->groups()->create([
+                'name' => $validated['name'],
+                'description' => $validated['description'] ?? null,
+            ]);
+
+            if (!$group) {
+                throw new \Exception('No se pudo crear el grupo');
+            }
+
+            // Procesar nuevas actitudes si existen
+            if (!empty($validated['new_attitudes'])) {
+                foreach ($validated['new_attitudes'] as $index => $name) {
+                    if (!empty($name)) {
+                        $points = $validated['new_attitude_points'][$index] ?? 0;
+
+                        $group->attitudes()->create([
+                            'name' => $name,
+                            'points' => $points,
+                        ]);
+                    }
                 }
             }
-        }
 
-        return back()->with('success', 'Grupo creado exitosamente');
+            // Procesar actitudes existentes si existen
+            if (!empty($validated['existing_attitudes'])) {
+                $existingPoints = json_decode($validated['existing_attitude_points'] ?? '[]', true);
+
+                foreach ($validated['existing_attitudes'] as $index => $attitudeId) {
+                    $existingAttitude = Attitude::find($attitudeId);
+                    if ($existingAttitude) {
+                        $points = $existingPoints[$index] ?? $existingAttitude->points;
+
+                        $group->attitudes()->create([
+                            'name' => $existingAttitude->name,
+                            'points' => $points,
+                        ]);
+                    }
+                }
+            }
+
+            DB::commit();
+            return redirect()->route('groups.show', ['school' => $school->id, 'group' => $group->id])
+                            ->with('success', 'Grupo creado exitosamente');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Error al crear el grupo: ' . $e->getMessage())
+                        ->withInput();
+        }
     }
 
     public function show(School $school, $groupId)
