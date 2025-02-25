@@ -18,7 +18,7 @@
                         <span class="text-6xl">👨‍🏫</span>
                     </div>
                     <h2 class="text-4xl font-bold text-white mb-2 text-glow">
-                        Portal del Profesor
+                        SanClass
                     </h2>
                     <p class="text-lg text-blue-300">
                         Accede a tu espacio educativo
