@@ -162,13 +162,34 @@ class StudentController extends BaseController
 
     public function removeAttitude(School $school, Student $student, Attitude $attitude)
     {
-        $student->attitudes()->detach($attitude->id);
+        // Obtener el último registro de esta actitud para este estudiante
+        $lastRecord = DB::table('student_attitude')
+            ->where('student_id', $student->id)
+            ->where('attitude_id', $attitude->id)
+            ->where('created_at', '>=', now()->startOfDay())
+            ->latest('created_at')
+            ->first();
+
+        if ($lastRecord) {
+            // Eliminar solo el último registro
+            DB::table('student_attitude')
+                ->where('student_id', $student->id)
+                ->where('attitude_id', $attitude->id)
+                ->where('created_at', $lastRecord->created_at)
+                ->limit(1)
+                ->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Registro de actitud eliminado correctamente',
+                'new_points' => $student->getPointsByGroup($attitude->group_id)
+            ]);
+        }
 
         return response()->json([
-            'success' => true,
-            'message' => 'Actitud eliminada correctamente',
-            'new_points' => $student->getPointsByGroup($attitude->group_id)
-        ]);
+            'success' => false,
+            'message' => 'No hay registros de esta actitud para eliminar hoy'
+        ], 404);
     }
 
     public function quickAttitude(Request $request, School $school, Student $student)

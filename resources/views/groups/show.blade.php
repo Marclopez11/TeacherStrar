@@ -94,8 +94,28 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                    @if($group->attitudes->isNotEmpty())
 
+                    <!-- Resumen de Actitudes -->
+                    <div class="mt-6 space-y-4">
+                        <div class="bg-gray-50 rounded-xl p-4 mb-6">
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3">Resumen de Actitudes</h4>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                @foreach($group->attitudes as $attitude)
+                                    <div class="bg-white rounded-lg p-3 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm font-medium text-gray-700">{{ $attitude->name }}</span>
+                                            <span class="text-sm font-semibold {{ $attitude->points >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                                {{ $attitude->points > 0 ? '+' : '' }}{{ $attitude->points }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                </div>
+                @endif
+                </div>
                 <!-- Botón de Ranking -->
                 <div class="flex justify-end mb-8">
                     <a href="{{ route('groups.ranking', ['school' => $school->id, 'group' => $group->id]) }}"
@@ -141,24 +161,6 @@
                         </div>
                     </div>
 
-                    @if($group->attitudes->isNotEmpty())
-                        <div class="bg-gray-50 rounded-xl p-4 mb-6">
-                            <h4 class="text-sm font-semibold text-gray-700 mb-3">Resumen de Actitudes</h4>
-                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                                @foreach($group->attitudes as $attitude)
-                                    <div class="bg-white rounded-lg p-3 border border-gray-100">
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-sm font-medium text-gray-700">{{ $attitude->name }}</span>
-                                            <span class="text-sm font-semibold {{ $attitude->points >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                                {{ $attitude->points > 0 ? '+' : '' }}{{ $attitude->points }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
-
                     <!-- Grid de Estudiantes -->
                     <div id="studentsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                         @foreach($group->students as $student)
@@ -201,54 +203,62 @@
                                     </div>
                                 </div>
 
-                                <!-- Lista de Actitudes -->
-                                @php
-                                    $today = now()->format('Y-m-d');
-                                    $actitudesHoy = $student->attitudes()
-                                        ->wherePivot('created_at', '>=', $today)
-                                        ->get()
-                                        ->groupBy('id');
-                                @endphp
+                                <!-- Acciones de Actitudes -->
+                                <div class="p-4 bg-white border-t border-gray-100">
+                                    @php
+                                        $today = now()->format('Y-m-d');
+                                        $actitudesHoy = $student->attitudes()
+                                            ->wherePivot('created_at', '>=', $today)
+                                            ->wherePivot('is_positive', true)
+                                            ->get()
+                                            ->groupBy(function($attitude) {
+                                                return $attitude->id;
+                                            });
+                                    @endphp
 
-                                @if($actitudesHoy->isNotEmpty())
-                                    <div class="p-2 bg-gray-50">
-                                        <div class="p-3 bg-gray-50">
-                                            <h4 class="text-sm font-medium text-gray-600 mb-2">Actitudes de Hoy</h4>
-                                            <div class="space-y-2">
-                                                @foreach($actitudesHoy as $actitudeGroup)
-                                                    @php
-                                                        $attitude = $actitudeGroup->first();
-                                                        $count = $actitudeGroup->count();
-                                                        $isPositive = $attitude->pivot->is_positive;
-                                                    @endphp
+                                    <!-- Lista de Actitudes -->
+                                    <div class="space-y-3">
+                                        @foreach($group->attitudes as $attitude)
+                                            @php
+                                                $positiveCount = isset($actitudesHoy[$attitude->id]) ? $actitudesHoy[$attitude->id]->count() : 0;
+                                            @endphp
+                                            <div class="flex items-center justify-between bg-gray-50 rounded-xl p-3 hover:bg-gray-100 transition-colors">
+                                                <!-- Nombre de la actitud -->
+                                                <div class="flex-1">
+                                                    <span class="text-sm font-medium text-gray-900">{{ $attitude->name }}</span>
+                                                </div>
 
-                                                    <div class="flex items-center justify-between bg-white rounded-lg p-2 border border-gray-100">
-                                                        <div class="flex items-center space-x-2">
-                                                            <span class="text-lg">{{ $isPositive ? '✅' : '❌' }}</span>
-                                                            <span class="text-sm font-medium text-gray-700">{{ $attitude->name }}</span>
-                                                            @if($count > 1)
-                                                                <span class="px-2 py-0.5 bg-gray-100 rounded-full text-xs font-medium text-gray-600">
-                                                                    x{{ $count }}
-                                                                </span>
-                                                            @endif
-                                                        </div>
-                                                        <div class="flex items-center space-x-1">
-                                                            <span class="text-sm font-semibold {{ $isPositive ? 'text-green-600' : 'text-red-600' }}">
-                                                                {{ $isPositive ? '+' : '' }}{{ $attitude->pivot->points }}
+                                                <!-- Botones y contadores -->
+                                                <div class="flex items-center space-x-2">
+                                                    <button onclick="registrarActitud({{ $student->id }}, {{ $attitude->id }}, 'add')"
+                                                            class="inline-flex items-center p-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                                        </svg>
+                                                    </button>
+
+                                                    <!-- Contadores del día -->
+                                                    <div class="min-w-[60px] text-center">
+                                                        @if($positiveCount > 0)
+                                                            <span class="inline-flex items-center px-3 py-1 rounded-md bg-gray-100 text-sm font-medium text-gray-800">
+                                                                {{ $positiveCount }}
                                                             </span>
-                                                            <button onclick="removeAttitude('{{ $school->id }}', '{{ $student->id }}', '{{ $attitude->id }}')"
-                                                                    class="p-1 text-gray-400 hover:text-red-500 transition-colors">
-                                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                                                </svg>
-                                                            </button>
-                                                        </div>
+                                                        @endif
                                                     </div>
-                                                @endforeach
+
+                                                    <button onclick="registrarActitud({{ $student->id }}, {{ $attitude->id }}, 'subtract')"
+                                                            class="inline-flex items-center p-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                                                            {{ $positiveCount == 0 ? 'disabled' : '' }}
+                                                            {{ $positiveCount == 0 ? 'style=opacity:0.5;cursor:not-allowed' : '' }}>
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+                                                        </svg>
+                                                    </button>
+                                                </div>
                                             </div>
-                                        </div>
+                                        @endforeach
                                     </div>
-                                @endif
+                                </div>
                             </div>
                         @endforeach
                     </div>
@@ -426,24 +436,30 @@
         </div>
     </div>
 
-    <!-- Modal de Confirmación -->
-    <div id="modal-confirmar" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div class="mt-3">
-                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full" id="modal-icon-container">
-                    <!-- El icono cambiará según la acción -->
+    <!-- Modal de Confirmar Actitud -->
+    <div id="modal-confirmar" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div id="modal-icon-container" class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-green-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <!-- El icono se insertará dinámicamente -->
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title"></h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500" id="modal-message"></p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <h3 class="text-lg font-medium text-gray-900 text-center mt-2" id="modal-title"></h3>
-                <div class="mt-2 px-7 py-3">
-                    <p class="text-sm text-gray-500 text-center" id="modal-message"></p>
-                </div>
-                <div class="flex justify-center gap-4 mt-3">
-                    <button id="modal-confirm"
-                            class="px-4 py-2 text-white text-base font-medium rounded-md shadow-sm focus:outline-none focus:ring-2">
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" id="modal-confirm" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
                         Confirmar
                     </button>
-                    <button id="modal-cancel"
-                            class="px-4 py-2 bg-gray-100 text-gray-700 text-base font-medium rounded-md border border-gray-300 shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                    <button type="button" id="modal-cancel" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                         Cancelar
                     </button>
                 </div>
@@ -528,12 +544,12 @@ function removeExistingAttitude(button) {
     form.appendChild(input);
 }
 
-function registrarActitud(studentId, attitudeId, action = 'add') {
+function registrarActitud(studentId, attitudeId, action) {
     const modal = document.getElementById('modal-confirmar');
     const title = document.getElementById('modal-title');
     const message = document.getElementById('modal-message');
-    const confirmBtn = document.getElementById('modal-confirm');
     const iconContainer = document.getElementById('modal-icon-container');
+    const confirmBtn = document.getElementById('modal-confirm');
 
     // Guardar los datos para el evento de confirmación
     modal.dataset.studentId = studentId;
@@ -542,28 +558,27 @@ function registrarActitud(studentId, attitudeId, action = 'add') {
 
     // Configurar el modal según la acción
     if (action === 'add') {
-        title.textContent = 'Aumentar Puntos';
-        message.textContent = '¿Quieres aumentar los puntos de este alumno?';
+        title.textContent = 'Registrar Actitud';
+        message.textContent = '¿Quieres registrar esta actitud para el alumno?';
         iconContainer.className = 'mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100';
         iconContainer.innerHTML = `
             <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
             </svg>
         `;
-        confirmBtn.className = 'px-4 py-2 bg-green-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300';
+        confirmBtn.className = 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm';
     } else {
-        title.textContent = 'Disminuir Puntos';
-        message.textContent = '¿Quieres disminuir los puntos de este alumno?';
+        title.textContent = 'Eliminar Registro de Actitud';
+        message.textContent = '¿Quieres eliminar el último registro de esta actitud para el alumno?';
         iconContainer.className = 'mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100';
         iconContainer.innerHTML = `
             <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
             </svg>
         `;
-        confirmBtn.className = 'px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300';
+        confirmBtn.className = 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm';
     }
 
-    // Mostrar el modal
     modal.classList.remove('hidden');
 }
 
@@ -579,34 +594,58 @@ document.getElementById('modal-confirm').addEventListener('click', function() {
         return;
     }
 
-    fetch(`/schools/{{ $school->id }}/students/${studentId}/attitudes`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-            attitude_id: attitudeId,
-            multiplier: action === 'add' ? 1 : -1
+    if (action === 'add') {
+        // Registrar actitud positiva
+        fetch(`/schools/{{ $school->id }}/students/${studentId}/attitudes`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                attitude_id: attitudeId,
+                multiplier: 1
+            })
         })
-    })
-    .then(async response => {
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message || 'Error en el servidor');
-        return data;
-    })
-    .then(data => {
-        if (data.success) {
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                throw new Error(data.message || 'Error al procesar la solicitud');
+            }
             location.reload();
-        }
-        modal.classList.add('hidden');
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert(error.message || 'Error al procesar la solicitud');
-        modal.classList.add('hidden');
-    });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert(error.message);
+        })
+        .finally(() => {
+            modal.classList.add('hidden');
+        });
+    } else {
+        // Eliminar último registro de actitud
+        fetch(`/schools/{{ $school->id }}/students/${studentId}/attitudes/${attitudeId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                throw new Error(data.message || 'Error al procesar la solicitud');
+            }
+            location.reload();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert(error.message);
+        })
+        .finally(() => {
+            modal.classList.add('hidden');
+        });
+    }
 });
 
 // Evento para cancelar la acción

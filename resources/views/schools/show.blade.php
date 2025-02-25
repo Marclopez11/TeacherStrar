@@ -367,10 +367,51 @@
                         <div>
                             <h3 class="text-lg font-medium text-gray-900 mb-4">Actitudes</h3>
 
+                            <!-- Actitudes Existentes -->
+                            <div class="mb-6">
+                                <div class="flex justify-between items-center mb-2">
+                                    <label class="block text-sm font-medium text-gray-700">Actitudes existentes</label>
+                                </div>
+                                <div class="max-h-[200px] overflow-y-auto space-y-3 bg-gray-50 p-4 rounded-xl">
+                                    @php
+                                        $existingAttitudes = \App\Models\Attitude::whereHas('group', function($query) use ($school) {
+                                            $query->where('school_id', $school->id);
+                                        })->get()->unique(function($attitude) {
+                                            return $attitude->name . '-' . $attitude->points;
+                                        });
+                                    @endphp
+
+                                    @forelse($existingAttitudes as $attitude)
+                                        <div class="flex items-center space-x-3 bg-white p-3 rounded-lg border border-gray-200">
+                                            <input type="checkbox"
+                                                   name="existing_attitudes[]"
+                                                   value="{{ $attitude->id }}"
+                                                   id="attitude_{{ $attitude->id }}"
+                                                   class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                                            <label for="attitude_{{ $attitude->id }}" class="flex-1 flex items-center justify-between">
+                                                <span class="text-sm font-medium text-gray-700">{{ $attitude->name }}</span>
+                                                <div class="flex items-center space-x-2">
+                                                    <input type="number"
+                                                           name="existing_attitude_points[]"
+                                                           value="{{ $attitude->points }}"
+                                                           class="w-20 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                                           placeholder="Puntos">
+                                                    <span class="text-sm font-semibold {{ $attitude->points >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                                        ({{ $attitude->points > 0 ? '+' : '' }}{{ $attitude->points }})
+                                                    </span>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    @empty
+                                        <p class="text-sm text-gray-500 text-center py-4">No hay actitudes existentes</p>
+                                    @endforelse
+                                </div>
+                            </div>
+
                             <!-- Nuevas Actitudes -->
                             <div>
                                 <div class="flex justify-between items-center mb-2">
-                                    <label class="block text-sm font-medium text-gray-700">Actitudes del grupo</label>
+                                    <label class="block text-sm font-medium text-gray-700">Nuevas actitudes</label>
                                     <button type="button" onclick="addNewAttitude()"
                                         class="text-sm text-blue-600 hover:text-blue-800">
                                         + Añadir actitud
@@ -516,34 +557,40 @@
         }
     }
 
-    function addNewAttitude() {
-        const container = document.getElementById('new-attitudes');
-        const newField = document.createElement('div');
-        newField.className = 'flex items-center space-x-2';
-        newField.innerHTML = `
-        <input type="text"
-               name="new_attitudes[]"
-               class="flex-1 rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-               placeholder="Nombre de la actitud">
-        <input type="number"
-               name="new_attitude_points[]"
-               class="w-20 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-               placeholder="Puntos">
-        <button type="button" onclick="removeAttitude(this)"
-                class="p-2 text-red-500 hover:text-red-700">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-        </button>
-    `;
-        container.appendChild(newField);
-    }
-
-    function removeAttitude(button) {
-        button.parentElement.remove();
+    function handleExistingAttitudeCheckbox(checkbox) {
+        const pointsInput = checkbox.closest('.flex').querySelector('input[type="number"]');
+        pointsInput.disabled = !checkbox.checked;
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize existing attitude checkboxes
+        document.querySelectorAll('input[name="existing_attitudes[]"]').forEach(checkbox => {
+            const pointsInput = checkbox.closest('.flex').querySelector('input[type="number"]');
+            pointsInput.disabled = !checkbox.checked;
+
+            checkbox.addEventListener('change', function() {
+                handleExistingAttitudeCheckbox(this);
+            });
+        });
+
+        // Handle form submission
+        document.querySelector('form[action*="groups"]').addEventListener('submit', function(e) {
+            const checkedAttitudes = document.querySelectorAll('input[name="existing_attitudes[]"]:checked');
+            const points = [];
+
+            checkedAttitudes.forEach(checkbox => {
+                const pointsInput = checkbox.closest('.flex').querySelector('input[type="number"]');
+                points.push(pointsInput.value);
+            });
+
+            // Create hidden input for points
+            const pointsInput = document.createElement('input');
+            pointsInput.type = 'hidden';
+            pointsInput.name = 'existing_attitude_points';
+            pointsInput.value = JSON.stringify(points);
+            this.appendChild(pointsInput);
+        });
+
         const grid = document.getElementById('groupsGrid');
         const searchInput = document.getElementById('searchInput');
         const sortButton = document.getElementById('sortButton');
@@ -595,4 +642,31 @@
         // Initial sort (ascending)
         sortGroups();
     });
+
+    function addNewAttitude() {
+        const container = document.getElementById('new-attitudes');
+        const newField = document.createElement('div');
+        newField.className = 'flex items-center space-x-2';
+        newField.innerHTML = `
+        <input type="text"
+               name="new_attitudes[]"
+               class="flex-1 rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+               placeholder="Nombre de la actitud">
+        <input type="number"
+               name="new_attitude_points[]"
+               class="w-20 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+               placeholder="Puntos">
+        <button type="button" onclick="removeAttitude(this)"
+                class="p-2 text-red-500 hover:text-red-700">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+    `;
+        container.appendChild(newField);
+    }
+
+    function removeAttitude(button) {
+        button.parentElement.remove();
+    }
 </script>

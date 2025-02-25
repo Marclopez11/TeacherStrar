@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Portal Sandra</title>
+        <title>SandClass</title>
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
         <link href="{{ asset('css/app.css') }}" rel="stylesheet">
@@ -27,7 +27,7 @@
                     <div class="flex justify-between h-16 items-center">
                         <div class="flex items-center space-x-2">
                             <span class="text-3xl">🏫</span>
-                            <span class="text-2xl font-bold text-white">Portal Sandra</span>
+                            <span class="text-2xl font-bold text-white">SandClass</span>
                         </div>
 
                         @if (Route::has('login'))
@@ -62,7 +62,7 @@
                         <!-- Texto principal -->
                         <div class="text-center md:text-left space-y-6">
                             <h1 class="text-5xl md:text-6xl font-bold text-white text-glow">
-                                Bienvenido al Portal Sandra
+                                Bienvenido al SandClass
                             </h1>
                             <p class="text-xl text-blue-300">
                                 Un espacio diseñado para facilitar la gestión educativa y mejorar la experiencia de aprendizaje.
