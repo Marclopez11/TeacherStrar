@@ -16,6 +16,20 @@ class SchoolController extends BaseController
 {
     use AuthorizesRequests, ValidatesRequests;
 
+    private function checkSchoolMembership(School $school)
+    {
+        if (!$school->users()->where('user_id', Auth::id())->exists()) {
+            abort(403, 'No tienes acceso a esta escuela.');
+        }
+    }
+
+    private function checkSchoolAdmin(School $school)
+    {
+        if (!$school->users()->where('user_id', Auth::id())->wherePivot('role', 'admin')->exists()) {
+            abort(403, 'No tienes permisos de administrador en esta escuela.');
+        }
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -81,6 +95,8 @@ class SchoolController extends BaseController
 
     public function show(School $school)
     {
+        $this->checkSchoolMembership($school);
+
         // Cargar la escuela con los contadores necesarios
         $school = $school->load(['groups' => function($query) {
             $query->withCount(['students', 'attitudes'])->orderBy('name', 'asc');
@@ -92,6 +108,8 @@ class SchoolController extends BaseController
 
     public function update(Request $request, School $school)
     {
+        $this->checkSchoolAdmin($school);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'city' => ['nullable', 'string', 'max:255'],
@@ -113,14 +131,20 @@ class SchoolController extends BaseController
 
     public function search(Request $request)
     {
-        return School::where('name', 'like', "%{$request->q}%")
-            ->orWhere('city', 'like', "%{$request->q}%")
-            ->take(5)
-            ->get();
+        // Solo devolver escuelas donde el usuario es miembro
+        return School::whereHas('users', function($query) {
+            $query->where('user_id', Auth::id());
+        })
+        ->where('name', 'like', "%{$request->q}%")
+        ->orWhere('city', 'like', "%{$request->q}%")
+        ->take(5)
+        ->get();
     }
 
     public function regenerateLogo(School $school)
     {
+        $this->checkSchoolAdmin($school);
+
         // Generar nueva imagen
         $school->logo_path = $school->generateRandomSchoolImage();
         $school->save();

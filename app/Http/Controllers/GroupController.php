@@ -10,13 +10,37 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 
 class GroupController extends BaseController
 {
     use AuthorizesRequests, ValidatesRequests;
 
+    private function checkSchoolMembership(School $school)
+    {
+        if (!$school->users()->where('user_id', Auth::id())->exists()) {
+            abort(403, 'No tienes acceso a esta escuela.');
+        }
+    }
+
+    private function checkSchoolAdmin(School $school)
+    {
+        if (!$school->users()->where('user_id', Auth::id())->wherePivot('role', 'admin')->exists()) {
+            abort(403, 'No tienes permisos de administrador en esta escuela.');
+        }
+    }
+
+    private function checkGroupAccess(Group $group)
+    {
+        if (!$group->school->users()->where('user_id', Auth::id())->exists()) {
+            abort(403, 'No tienes acceso a este grupo.');
+        }
+    }
+
     public function index(School $school)
     {
+        $this->checkSchoolMembership($school);
+
         $groups = $school->groups()
             ->withCount(['students', 'attitudes'])
             ->get()
@@ -27,6 +51,8 @@ class GroupController extends BaseController
 
     public function store(Request $request, School $school)
     {
+        $this->checkSchoolAdmin($school);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
@@ -59,13 +85,20 @@ class GroupController extends BaseController
 
     public function show(School $school, $groupId)
     {
+        $this->checkSchoolMembership($school);
+
         $group = Group::belongsToSchool($school->id)->findOrFail($groupId);
+        $this->checkGroupAccess($group);
+
         $group->load(['students', 'attitudes']);
         return view('groups.show', compact('school', 'group'));
     }
 
     public function update(Request $request, School $school, Group $group)
     {
+        $this->checkSchoolAdmin($school);
+        $this->checkGroupAccess($group);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
@@ -128,12 +161,17 @@ class GroupController extends BaseController
 
     public function destroy(School $school, Group $group)
     {
+        $this->checkSchoolAdmin($school);
+        $this->checkGroupAccess($group);
+
         $group->delete();
         return back()->with('success', 'Grupo eliminado exitosamente');
     }
 
     public function create(School $school)
     {
+        $this->checkSchoolAdmin($school);
+
         // Obtener todas las actitudes existentes de la escuela
         $existingAttitudes = Attitude::whereHas('group', function($query) use ($school) {
             $query->where('school_id', $school->id);
@@ -144,6 +182,9 @@ class GroupController extends BaseController
 
     public function regenerateAvatar(School $school, Group $group)
     {
+        $this->checkSchoolAdmin($school);
+        $this->checkGroupAccess($group);
+
         $group->update([
             'avatar_seed' => Str::random(10),
             'avatar_style' => 'avataaars'
@@ -157,6 +198,9 @@ class GroupController extends BaseController
 
     public function ranking(School $school, Group $group)
     {
+        $this->checkSchoolMembership($school);
+        $this->checkGroupAccess($group);
+
         $sort = request('sort', 'alpha'); // Default to alphabetical sorting
 
         $students = $group->students; // Get the collection first
