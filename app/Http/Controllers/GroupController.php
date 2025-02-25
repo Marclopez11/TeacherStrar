@@ -225,7 +225,7 @@ class GroupController extends BaseController
 
         $group->update([
             'avatar_seed' => Str::random(10),
-            'avatar_style' => 'avataaars'
+            'avatar_style' => 'fun-emoji'
         ]);
 
         $group->avatar_path = $group->generateAvatar();

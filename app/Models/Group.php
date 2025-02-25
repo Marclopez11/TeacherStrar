@@ -29,7 +29,7 @@ class Group extends Model
 
         static::creating(function ($group) {
             $group->avatar_seed = $group->avatar_seed ?? Str::random(10);
-            $group->avatar_style = $group->avatar_style ?? 'avataaars';
+            $group->avatar_style = $group->avatar_style ?? 'fun-emoji';
             $group->avatar_path = $group->generateAvatar();
         });
     }
