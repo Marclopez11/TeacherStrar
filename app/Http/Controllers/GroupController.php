@@ -245,15 +245,16 @@ class GroupController extends BaseController
         $this->checkGroupAccess($group);
 
         $sort = request('sort', 'alpha'); // Default to alphabetical sorting
-
-        $students = $group->students; // Get the collection first
+        $students = $group->students;
 
         if ($sort === 'points') {
+            // Ordenar por puntos y reindexar la colección
             $students = $students->sortByDesc(function($student) use ($group) {
                 return $student->getPointsByGroup($group->id);
-            });
+            })->values(); // Usar values() para reindexar la colección
         } else {
-            $students = $students->sortBy('name');
+            // Ordenar alfabéticamente y reindexar
+            $students = $students->sortBy('name')->values();
         }
 
         return view('groups.ranking', [
