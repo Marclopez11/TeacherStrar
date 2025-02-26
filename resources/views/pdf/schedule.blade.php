@@ -139,7 +139,7 @@
 <body>
     <div class="header">
         <h1 class="school-name">{{ $school->name }}</h1>
-        <h2 class="group-name">Horario del Profesor: {{ $user->name }}</h2>
+        <h2 class="group-name">Horari del Professor: {{ $user->name }}</h2>
     </div>
 
     <table>
@@ -175,7 +175,7 @@
     </table>
 
     <div class="footer">
-        <p>{{ $school->name }} • Documento generado el {{ now()->format('d/m/Y') }}</p>
+        <p>{{ $school->name }} • Document generat el {{ now()->format('d/m/Y') }}</p>
     </div>
 
     <div class="logo-watermark">

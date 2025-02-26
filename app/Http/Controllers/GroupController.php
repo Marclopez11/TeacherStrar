@@ -63,20 +63,42 @@ class GroupController extends BaseController
             'new_attitude_points.*' => ['nullable', 'integer'],
             'existing_attitudes' => ['nullable', 'array'],
             'existing_attitudes.*' => ['nullable', 'exists:attitudes,id'],
-            'existing_attitude_points' => ['nullable', 'json'],
+            'existing_attitude_points' => ['nullable', 'array'],
+            'existing_attitude_points.*' => ['nullable', 'integer'],
+            'avatar_seed' => ['nullable', 'string'],
+            'avatar_style' => ['nullable', 'string'],
         ]);
 
         try {
             DB::beginTransaction();
 
-            // Crear el grupo primero
+            // Crear el grupo
             $group = $school->groups()->create([
                 'name' => $validated['name'],
                 'description' => $validated['description'] ?? null,
+                'avatar_seed' => $validated['avatar_seed'] ?? Str::random(10),
+                'avatar_style' => $validated['avatar_style'] ?? 'shapes',
             ]);
 
             if (!$group) {
                 throw new \Exception('No se pudo crear el grupo');
+            }
+
+            // Procesar actitudes existentes si existen
+            if (!empty($validated['existing_attitudes'])) {
+                foreach ($validated['existing_attitudes'] as $index => $attitudeId) {
+                    if (!empty($attitudeId)) {
+                        $existingAttitude = Attitude::find($attitudeId);
+                        if ($existingAttitude) {
+                            $points = $validated['existing_attitude_points'][$index] ?? $existingAttitude->points;
+
+                            $group->attitudes()->create([
+                                'name' => $existingAttitude->name,
+                                'points' => $points,
+                            ]);
+                        }
+                    }
+                }
             }
 
             // Procesar nuevas actitudes si existen
@@ -87,23 +109,6 @@ class GroupController extends BaseController
 
                         $group->attitudes()->create([
                             'name' => $name,
-                            'points' => $points,
-                        ]);
-                    }
-                }
-            }
-
-            // Procesar actitudes existentes si existen
-            if (!empty($validated['existing_attitudes'])) {
-                $existingPoints = json_decode($validated['existing_attitude_points'] ?? '[]', true);
-
-                foreach ($validated['existing_attitudes'] as $index => $attitudeId) {
-                    $existingAttitude = Attitude::find($attitudeId);
-                    if ($existingAttitude) {
-                        $points = $existingPoints[$index] ?? $existingAttitude->points;
-
-                        $group->attitudes()->create([
-                            'name' => $existingAttitude->name,
                             'points' => $points,
                         ]);
                     }
@@ -225,7 +230,7 @@ class GroupController extends BaseController
 
         $group->update([
             'avatar_seed' => Str::random(10),
-            'avatar_style' => 'fun-emoji'
+            'avatar_style' => 'shapes'
         ]);
 
         $group->avatar_path = $group->generateAvatar();

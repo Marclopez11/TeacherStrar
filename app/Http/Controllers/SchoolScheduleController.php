@@ -35,7 +35,7 @@ class SchoolScheduleController extends Controller
     {
         $validated = $request->validate([
             'slots' => 'required|array',
-            'slots.*.name' => 'required|string',
+            'slots.*.name' => 'nullable|string',
             'slots.*.start_time' => 'required|date_format:H:i',
             'slots.*.end_time' => 'required|date_format:H:i',
             'slots.*.is_break' => 'nullable|string'
@@ -55,7 +55,7 @@ class SchoolScheduleController extends Controller
                 if ($existingSlot) {
                     // Actualizar franja existente
                     $existingSlot->update([
-                        'name' => $slotData['name'],
+                        'name' => $slotData['name'] ?? '       ',
                         'start_time' => $slotData['start_time'],
                         'end_time' => $slotData['end_time'],
                         'is_break' => $slotData['is_break'] === 'true',
@@ -66,7 +66,7 @@ class SchoolScheduleController extends Controller
                     // Crear nueva franja
                     $newSlot = TimeSlot::create([
                         'school_id' => $school->id,
-                        'name' => $slotData['name'],
+                        'name' => $slotData['name'] ?? '       ',
                         'start_time' => $slotData['start_time'],
                         'end_time' => $slotData['end_time'],
                         'is_break' => $slotData['is_break'] === 'true',

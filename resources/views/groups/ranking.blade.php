@@ -34,29 +34,33 @@
                     @foreach($students as $index => $student)
                         <div class="transform hover:scale-105 transition-all duration-300">
                             @php
-                                $gradientClass = match($index) {
-                                    0 => 'from-yellow-500/10 to-amber-500/10',
-                                    1 => 'from-slate-500/10 to-gray-500/10',
-                                    2 => 'from-orange-500/10 to-red-500/10',
+                                $showPosition = request('sort') === 'points';
+                                $position = $showPosition ? $index + 1 : null;
+                                $points = $student->getPointsByGroup($group->id);
+
+                                $gradientClass = $showPosition ? match($position) {
+                                    1 => 'from-yellow-500/10 to-amber-500/10',
+                                    2 => 'from-slate-500/10 to-gray-500/10',
+                                    3 => 'from-orange-500/10 to-red-500/10',
                                     default => 'from-indigo-500/5 to-purple-500/5'
-                                };
+                                } : 'from-indigo-500/5 to-purple-500/5';
 
-                                $borderAccentClass = match($index) {
-                                    0 => 'border-yellow-400/50',
-                                    1 => 'border-gray-400/50',
-                                    2 => 'border-orange-400/50',
+                                $borderAccentClass = $showPosition ? match($position) {
+                                    1 => 'border-yellow-400/50',
+                                    2 => 'border-gray-400/50',
+                                    3 => 'border-orange-400/50',
                                     default => 'border-purple-300/30'
-                                };
+                                } : 'border-purple-300/30';
 
-                                $medalEmoji = match($index) {
-                                    0 => '🏆',
-                                    1 => '🥈',
-                                    2 => '🥉',
+                                $medalEmoji = $showPosition ? match($position) {
+                                    1 => '🏆',
+                                    2 => '🥈',
+                                    3 => '🥉',
                                     default => null
-                                };
+                                } : null;
                             @endphp
 
-                            <div class="relative bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden group p-4 min-h-[200px] flex flex-col items-center justify-between">
+                            <div class="relative bg-white rounded-xl border {{ $borderAccentClass }} shadow-sm overflow-hidden group p-4 min-h-[200px] flex flex-col items-center justify-between">
                                 <!-- Fondo con gradiente -->
                                 <div class="absolute inset-0 bg-gradient-to-br {{ $gradientClass }} opacity-60"></div>
 
@@ -64,15 +68,30 @@
                                 <div class="relative w-full">
                                     <!-- Posición -->
                                     <div class="absolute top-0 right-0 flex items-center space-x-1">
-                                        @if($medalEmoji)
-                                            <span class="text-lg filter drop-shadow-md">{{ $medalEmoji }}</span>
-                                        @else
-                                            <span class="text-xs font-bold text-gray-400">#{{ $index + 1 }}</span>
+                                        @if($showPosition)
+                                            @if($medalEmoji)
+                                                <span class="text-lg filter drop-shadow-md">{{ $medalEmoji }}</span>
+                                            @else
+                                                <span class="text-xs font-bold text-gray-400">#{{ $position }}</span>
+                                            @endif
                                         @endif
                                     </div>
 
                                     <!-- Avatar -->
                                     <div class="relative mx-auto w-20 h-20 mb-3">
+                                        @if($showPosition)
+                                            <div class="absolute -top-2 -right-2 z-10">
+                                                @if($position <= 3)
+                                                    <div class="w-8 h-8 flex items-center justify-center">
+                                                        <span class="text-xl filter drop-shadow-md animate-float">{{ $medalEmoji }}</span>
+                                                    </div>
+                                                @else
+                                                    <div class="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center border border-gray-200">
+                                                        <span class="text-xs font-bold text-gray-500">#{{ $position }}</span>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        @endif
                                         <div class="w-full h-full rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden">
                                             <img src="{{ asset('images/' . $student->avatar_path) }}"
                                                  class="w-16 h-16 object-contain"
@@ -87,7 +106,7 @@
                                         </h3>
                                         <div class="inline-flex items-center px-3 py-1 rounded-full bg-white/50 backdrop-blur-sm border border-gray-100 shadow-sm">
                                             <span class="text-base font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                                                {{ $student->getPointsByGroup($group->id) }}
+                                                {{ $points }}
                                             </span>
                                             <span class="ml-1 text-base">✨</span>
                                         </div>

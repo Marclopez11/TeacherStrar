@@ -44,7 +44,7 @@
                                     <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
                                         Hora
                                     </th>
-                                    @foreach(['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'] as $day)
+                                    @foreach(['Dilluns', 'Dimarts', 'Dimecres', 'Dijous', 'Divendres'] as $day)
                                         <th class="px-6 py-3 border-b border-gray-200 {{ strtolower($day) === strtolower(now()->locale('es')->dayName) ? 'bg-blue-50' : 'bg-gray-50' }} text-left text-xs leading-4 font-medium {{ strtolower($day) === strtolower(now()->locale('es')->dayName) ? 'text-blue-600' : 'text-gray-500' }} uppercase tracking-wider">
                                             {{ $day }}
                                             @if(strtolower($day) === strtolower(now()->locale('es')->dayName))
@@ -61,17 +61,17 @@
                                             <div class="text-sm leading-5 text-gray-900">
                                                 {{ $slot->name }}
                                                 @if($slot->is_break)
-                                                    <span class="ml-2 text-xs text-gray-500">(Recreo)</span>
+                                                    <span class="ml-2 text-xs text-gray-500">(Pati)</span>
                                                 @endif
                                             </div>
                                             <div class="text-sm leading-5 text-gray-500">
                                                 {{ $slot->start_time->format('H:i') }} - {{ $slot->end_time->format('H:i') }}
                                             </div>
                                         </td>
-                                        @foreach(['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'] as $day)
+                                        @foreach(['Dilluns', 'Dimarts', 'Dimecres', 'Dijous', 'Divendres'] as $day)
                                             <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
                                                 @if($slot->is_break)
-                                                    <div class="text-sm text-gray-500 italic">Recreo</div>
+                                                    <div class="text-sm text-gray-500 italic">Pati</div>
                                                 @else
                                                     <div class="text-sm text-gray-900">
                                                         {{ $scheduleEntries->first(function($entry) use ($slot, $day) {
@@ -115,7 +115,7 @@
                                             <thead>
                                                 <tr>
                                                     <th class="px-4 py-2 border">Horario</th>
-                                                    @foreach(['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'] as $day)
+                                                    @foreach(['Dilluns', 'Dimarts', 'Dimecres', 'Dijous', 'Divendres'] as $day)
                                                         <th class="px-4 py-2 border">{{ $day }}</th>
                                                     @endforeach
                                                 </tr>
@@ -129,7 +129,7 @@
                                                                 {{ $slot->start_time->format('H:i') }} - {{ $slot->end_time->format('H:i') }}
                                                             </div>
                                                         </td>
-                                                        @foreach(['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'] as $day)
+                                                        @foreach(['Dilluns', 'Dimarts', 'Dimecres', 'Dijous', 'Divendres'] as $day)
                                                             <td class="px-4 py-2 border">
                                                                 @if(!$slot->is_break)
                                                                     <input type="text"
@@ -140,7 +140,7 @@
                                                                                return $entry->time_slot_id === $slot->id && $entry->day === $day;
                                                                            })?->subject }}">
                                                                 @else
-                                                                    <div class="text-center text-gray-500">Recreo</div>
+                                                                    <div class="text-center text-gray-500">Pati</div>
                                                                 @endif
                                                             </td>
                                                         @endforeach
@@ -241,7 +241,7 @@ function addTimeSlot(existingData = null) {
                     <label class="block text-sm font-medium text-gray-700">Nombre</label>
                     <input type="text"
                            name="slots[${index}][name]"
-                           required
+
                            class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                            placeholder="Ej: Primera Hora"
                            value="${existingData ? existingData.name : ''}">
@@ -256,7 +256,7 @@ function addTimeSlot(existingData = null) {
                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                            ${existingData && existingData.is_break ? 'checked' : ''}>
                     <label for="is_break_${index}" class="ml-2 block text-sm text-gray-700">
-                        Es recreo
+                        Pati
                     </label>
                 </div>
 
@@ -288,7 +288,7 @@ function addTimeSlot(existingData = null) {
     checkbox.addEventListener('change', function() {
         const nameInput = this.closest('.grid').querySelector('input[type="text"]');
         if (this.checked) {
-            nameInput.value = nameInput.value || 'Recreo';
+            nameInput.value = nameInput.value || 'Pati';
         }
     });
 }
