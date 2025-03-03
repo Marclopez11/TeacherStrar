@@ -54,7 +54,15 @@ class GroupController extends BaseController
     {
         $this->checkSchoolAdmin($school);
 
-        $validated = $request->validate([
+        // Limpiar y preparar los datos antes de la validación
+        $data = $request->all();
+
+        // Convertir string "[]" a array vacío
+        if (isset($data['existing_attitude_points']) && $data['existing_attitude_points'] === '[]') {
+            $data['existing_attitude_points'] = [];
+        }
+
+        $validated = validator($data, [
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'new_attitudes' => ['nullable', 'array'],
@@ -67,7 +75,7 @@ class GroupController extends BaseController
             'existing_attitude_points.*' => ['nullable', 'integer'],
             'avatar_seed' => ['nullable', 'string'],
             'avatar_style' => ['nullable', 'string'],
-        ]);
+        ])->validate();
 
         try {
             DB::beginTransaction();
@@ -83,6 +91,10 @@ class GroupController extends BaseController
             if (!$group) {
                 throw new \Exception('No se pudo crear el grupo');
             }
+
+            // Generar avatar
+            $group->avatar_path = $group->generateAvatar();
+            $group->save();
 
             // Procesar actitudes existentes si existen
             if (!empty($validated['existing_attitudes'])) {
@@ -102,10 +114,11 @@ class GroupController extends BaseController
             }
 
             // Procesar nuevas actitudes si existen
-            if (!empty($validated['new_attitudes'])) {
+            if (!empty($validated['new_attitudes']) && is_array($validated['new_attitudes'])) {
                 foreach ($validated['new_attitudes'] as $index => $name) {
                     if (!empty($name)) {
-                        $points = $validated['new_attitude_points'][$index] ?? 0;
+                        $points = isset($validated['new_attitude_points'][$index]) ?
+                                 intval($validated['new_attitude_points'][$index]) : 0;
 
                         $group->attitudes()->create([
                             'name' => $name,
