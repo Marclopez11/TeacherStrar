@@ -146,7 +146,7 @@
         <thead>
             <tr>
                 <th style="border-radius: 4px 0 0 0">Hora</th>
-                @foreach(['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'] as $day)
+                @foreach(['Dilluns', 'Dimarts', 'Dimecres', 'Dijous', 'Divendres'] as $day)
                     <th @if($loop->last) style="border-radius: 0 4px 0 0" @endif>{{ $day }}</th>
                 @endforeach
             </tr>
@@ -158,7 +158,7 @@
                         {{ $slot->name }}
                         <span class="time-info">{{ $slot->start_time->format('H:i') }} - {{ $slot->end_time->format('H:i') }}</span>
                     </td>
-                    @foreach(['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'] as $day)
+                    @foreach(['Dilluns', 'Dimarts', 'Dimecres', 'Dijous', 'Divendres'] as $day)
                         <td class="subject-cell">
                             @if($slot->is_break)
                                 <span class="break-text">Pati</span>
